@@ -3,225 +3,330 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Ment Shift Flow — WFH 排班表</title>
-<style>
-  :root {
-    --bg: #eff1f4;
-    --panel: #ffffff;
-    --border: #ccd3dc;
-    --border-strong: #97a2b0;
-    --text: #0e1520;
-    --muted: #47515f;
-    --faint: #6d7684;
-    --accent: #1544c4;
-    --pm: #10307d;
-    --pm-bg: #dbe7ff;
-    --pm-bd: #7ba0f0;
-    --rd: #04473a;
-    --rd-bg: #c4ecdc;
-    --rd-bd: #47b491;
-    --holiday: #8a0e1a;
-    --holiday-bg: #fcdfe3;
-    --holiday-bd: #e4939c;
-    --makeup-bg: #faeec8;
-    --warn: #8a4106;
-    --warn-bg: #fdedbf;
-    --today: #1544c4;
-    --radius: 8px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #101418;
-      --panel: #1b2128;
-      --border: #39424d;
-      --border-strong: #596573;
-      --text: #f2f5f8;
-      --muted: #b3bdc9;
-      --faint: #8b96a3;
-      --accent: #8fb4ff;
-      --pm: #cfdeff;
-      --pm-bg: #1e3a68;
-      --pm-bd: #5b86d8;
-      --rd: #b3f5d7;
-      --rd-bg: #10462f;
-      --rd-bd: #45a97f;
-      --holiday: #ffc0c7;
-      --holiday-bg: #4d2229;
-      --holiday-bd: #a35a64;
-      --makeup-bg: #453718;
-      --warn: #ffd88a;
-      --warn-bg: #493713;
-      --today: #8fb4ff;
+
+<!-- 先決定主題再繪製，避免深色使用者看到一閃的白底 -->
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('wfh.theme');
+      var dark = saved ? saved === 'dark'
+                       : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) {
+      document.documentElement.dataset.theme = 'light';
     }
+  })();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=Instrument+Sans:wght@400;500;600&amp;display=swap">
+
+<style>
+  /* ── 設計 token ──────────────────────────────────────
+     淺色與深色共用同一份版面，切換主題只換這兩塊變數。 */
+  :root {
+    color-scheme: light;
+    --bg:#f3f5f8; --surface:#ffffff; --surface-2:#eef1f5; --surface-3:#e3e8ee;
+    --line:#e2e7ed; --line-2:#c9d2dc;
+    --fg:#111821; --fg-2:#4b5563; --fg-3:#6d7784;
+    --accent:#1f47c8; --accent-fg:#ffffff; --accent-soft:#e8edfd;
+    --pm:#2b4fd0; --pm-fg:#1c3a9c; --pm-bg:#e6ecfd; --pm-bd:#bccbf6;
+    --rd:#12876a; --rd-fg:#0a5442; --rd-bg:#dcf1e8; --rd-bd:#a8ddca;
+    --holiday:#98131f; --holiday-bg:#fbeaec; --holiday-bd:#eec9ce;
+    --makeup:#7a4708; --makeup-bg:#fcf1d8; --makeup-bd:#eeddb0;
+    --shadow:0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.04);
+    --pop-shadow:0 10px 30px rgba(16,24,40,.14), 0 2px 8px rgba(16,24,40,.08);
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg:#0d1116; --surface:#161b21; --surface-2:#1c222a; --surface-3:#252d36;
+    --line:#28303a; --line-2:#3b4653;
+    --fg:#edf1f6; --fg-2:#a6b2bf; --fg-3:#8693a1;
+    --accent:#8dabff; --accent-fg:#0d1116; --accent-soft:#1a2440;
+    --pm:#6b8ee8; --pm-fg:#c6d8ff; --pm-bg:#1b2b52; --pm-bd:#33477c;
+    --rd:#3fae85; --rd-fg:#a6ebcd; --rd-bg:#0f382b; --rd-bd:#1f5c47;
+    --holiday:#ffb3bb; --holiday-bg:#3b1f25; --holiday-bd:#5a2f37;
+    --makeup:#efcb8b; --makeup-bg:#382d18; --makeup-bd:#54452a;
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    --pop-shadow:0 10px 30px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
   }
 
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   body {
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background: var(--bg);
-    color: var(--text);
-    font: 14px/1.5 "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--fg);
+    font-family: "Instrument Sans", "Noto Sans TC", "Microsoft JhengHei",
+                 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
-  button { font: inherit; color: inherit; cursor: pointer; }
-  h1, h2, h3 { margin: 0; font-weight: 600; }
+  h1, h2, h3, p { margin: 0; }
+  button { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; }
+  svg { display: block; flex: none; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--fg); }
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 12px;
+  }
+  .mono, .num-tab { font-variant-numeric: tabular-nums; }
 
-  /* ── 版面 ── */
-  .topbar {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 12px 18px; background: var(--panel);
-    border-bottom: 1px solid var(--border);
+  /* ── 頁首 ── */
+  .hdr {
+    display: flex; align-items: center; gap: 14px; flex: none;
+    height: 58px; padding: 0 22px;
+    background: var(--surface); border-bottom: 1px solid var(--line);
   }
-  .topbar h1 { font-size: 16px; }
-  .topbar .sub { color: var(--muted); font-size: 12px; }
-  .spacer { flex: 1; }
+  .hdr h1 { font-size: 17px; font-weight: 600; letter-spacing: -.012em; white-space: nowrap; }
+  .hdr-sub { font-size: 12.5px; color: var(--fg-3); font-variant-numeric: tabular-nums;
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hdr-r { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
-  .layout {
-    display: grid; grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 16px; padding: 16px; align-items: start;
-  }
-  @media (max-width: 900px) {
-    .layout { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  .card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 14px; margin-bottom: 14px;
-  }
-  .card > h3 {
-    font-size: 13px; color: var(--muted); text-transform: uppercase;
-    letter-spacing: .04em; margin-bottom: 10px;
-  }
+  /* ── 控制元件 ── */
+  .seg { display: flex; gap: 2px; padding: 2px; border-radius: 9px;
+         background: var(--surface-2); border: 1px solid var(--line); }
+  .segbtn { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px;
+            border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--fg-2); }
+  .segbtn:hover { color: var(--fg); }
+  .segbtn.on { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: var(--shadow); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+         border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface);
+         font-size: 13px; font-weight: 500; color: var(--fg-2); }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ibtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+          border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--fg-2); }
+  .ibtn:hover { border-color: var(--accent); color: var(--accent); }
+  .tog { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px;
+         border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface);
+         font-size: 13px; font-weight: 500; color: var(--fg-2); }
+  .tog:hover { border-color: var(--accent); color: var(--accent); }
+  .tog.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  .tog.on:hover { color: var(--accent); }
+  .vrule { width: 1px; height: 20px; background: var(--line); }
 
   /* ── 工具列 ── */
-  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .toolbar .title { font-size: 17px; font-weight: 600; min-width: 8.5em; }
-  .btn {
-    background: var(--panel); border: 1px solid var(--border-strong);
-    border-radius: 6px; padding: 5px 10px; line-height: 1.3;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.icon { padding: 5px 9px; font-size: 15px; }
-  .btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.on:hover { color: #fff; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
-  .btn:disabled:hover { border-color: var(--border-strong); color: inherit; }
-  .seg { display: inline-flex; }
-  .seg .btn { border-radius: 0; }
-  .seg .btn:first-child { border-radius: 6px 0 0 6px; }
-  .seg .btn:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+  .toolbar { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tb-l { display: flex; align-items: center; gap: 8px; }
+  .tb-r { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tb-title { font-size: 19px; font-weight: 600; letter-spacing: -.012em;
+              min-width: 7.2em; font-variant-numeric: tabular-nums; }
+  .tb-label { font-size: 12.5px; color: var(--fg-3); }
+  .cover { font-size: 12.5px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+  .ctx { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px;
+         border-radius: 999px; background: var(--surface-2); font-size: 12.5px; color: var(--fg-2);
+         font-variant-numeric: tabular-nums; }
+  .ctx b { font-weight: 600; color: var(--fg); }
 
-  /* ── 月曆 ── */
-  .cal-scroll { overflow-x: auto; }
-  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
-          background: var(--border); border: 1px solid var(--border); border-radius: 6px;
-          overflow: hidden; min-width: 660px; }
-  .dow { background: var(--panel); padding: 7px 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-align: center; }
-  .dow.off { color: var(--faint); }
-
-  .cell {
-    background: var(--panel); min-height: 112px; padding: 7px 8px;
-    display: flex; flex-direction: column; gap: 4px;
-    border: none; text-align: left; width: 100%;
+  /* 人員篩選浮層：把舊版側欄那張「篩選」卡收進工具列 */
+  .pop-wrap { position: relative; }
+  .pop {
+    position: absolute; top: calc(100% + 7px); right: 0; z-index: 30; width: 268px;
+    padding: 14px; border-radius: 12px; background: var(--surface);
+    border: 1px solid var(--line); box-shadow: var(--pop-shadow);
   }
-  .cell:hover { background: var(--bg); }
-  .cell .num { font-size: 15px; font-weight: 700; color: var(--muted); display: flex; gap: 5px; align-items: baseline; }
-  .cell.outside { opacity: .4; cursor: default; }
-  .cell.outside:hover { background: var(--panel); }
-  .cell.weekend { background: color-mix(in srgb, var(--bg) 70%, var(--panel)); }
-  .cell.holiday { background: var(--holiday-bg); }
-  .cell.holiday .hname { font-weight: 600; }
-  .cell.holiday .num { color: var(--holiday); }
-  .cell.makeup { background: var(--makeup-bg); }
-  .cell.today .num { color: var(--today); }
-  .cell.today { box-shadow: inset 0 0 0 2px var(--today); }
-  .cell.selected { box-shadow: inset 0 0 0 2px var(--accent); background: var(--bg); }
-  .cell.today.selected { box-shadow: inset 0 0 0 2px var(--accent); }
-  .cell .hname {
-    font-size: 12px; color: var(--holiday); white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-  }
-  .cell .names { display: flex; flex-wrap: wrap; gap: 4px; }
-  .cell .more { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .pop[hidden] { display: none; }
+  .pop .chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pop .pop-foot { display: flex; gap: 6px; margin-top: 12px; padding-top: 12px;
+                   border-top: 1px solid var(--line); }
 
-  .chip {
-    display: inline-block; font-size: 13px; font-weight: 600; line-height: 1.5;
-    padding: 2px 8px; border-radius: 999px; white-space: nowrap;
-    border: 1px solid transparent;
-  }
-  .chip.PM { background: var(--pm-bg); color: var(--pm); border-color: var(--pm-bd); }
-  .chip.RD { background: var(--rd-bg); color: var(--rd); border-color: var(--rd-bd); }
+  /* ── 版面 ── */
+  .page { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+          gap: 22px; padding: 22px; align-items: start; }
+  .page.solo { grid-template-columns: minmax(0, 1fr); }
+  .page.solo > aside { display: none; }
 
-  /* ── 週檢視 ── */
-  .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
-          background: var(--border); border: 1px solid var(--border);
-          border-radius: 6px; overflow: hidden; min-width: 660px; }
-  .wcell { background: var(--panel); padding: 8px; min-height: 210px;
-           display: flex; flex-direction: column; gap: 6px;
-           border: none; text-align: left; width: 100%; align-items: stretch; }
-  .wcell:hover { background: var(--bg); }
-  .wcell.weekend { background: color-mix(in srgb, var(--bg) 70%, var(--panel)); }
-  .wcell.holiday { background: var(--holiday-bg); }
-  .wcell.makeup { background: var(--makeup-bg); }
-  .wcell.today { box-shadow: inset 0 0 0 2px var(--today); }
-  .wcell.selected { box-shadow: inset 0 0 0 2px var(--accent); }
-  .wcell .whead { font-size: 13px; font-weight: 600; color: var(--muted); }
-  .wcell.holiday .whead { color: var(--holiday); }
-  .wcell .wlist { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+  /* ── 月曆 ──
+     欄數會變（平日 5 欄；該月有補班日才多一欄六），格線用 1px gap 畫，
+     不靠 nth-child 補邊框；grid-template-columns 由 JS 給行內樣式。 */
+  .cal { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+         overflow: hidden; box-shadow: var(--shadow); }
+  .dow-row { display: grid; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+  .dow { padding: 8px 10px; text-align: center; font-size: 12.5px; font-weight: 600;
+         color: var(--fg-2); letter-spacing: .05em; background: var(--surface-2); }
+  .dow.off { color: var(--fg-3); }
+  .grid { display: grid; gap: 1px; background: var(--line); }
+
+  .cell { display: flex; flex-direction: column; gap: 5px; align-items: stretch; text-align: left;
+          min-height: 136px; padding: 9px 10px 10px; background: var(--surface); width: 100%; }
+  .cell:hover { background: var(--surface-2); }
+  .cell.wknd { background: var(--surface-2); }
+  .cell.out { background: var(--surface-2); cursor: default; }
+  .cell.out:hover { background: var(--surface-2); }
+  .cell.out .daynum { color: var(--fg-3); opacity: .6; }
+  .cell.hol { background: var(--holiday-bg); }
+  .cell.mkp { background: var(--makeup-bg); }
+  .cell.sel { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+  .cell.sel:hover { background: var(--accent-soft); }
+  .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .cell-top { display: flex; align-items: center; gap: 6px; min-height: 24px; }
+  .daynum { display: inline-flex; align-items: center; justify-content: center;
+            min-width: 24px; height: 24px; line-height: 1; color: var(--fg-2);
+            font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+            font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .cell.hol .daynum { color: var(--holiday); }
+  .cell.mkp .daynum { color: var(--makeup); }
+  .cell.today .daynum { background: var(--accent); color: var(--accent-fg);
+                        border-radius: 999px; font-weight: 600; }
+  .cnt { margin-left: auto; padding: 1px 6px; border-radius: 6px; background: var(--surface-2);
+         font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+         font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--fg-3);
+         font-variant-numeric: tabular-nums; }
+  .cell.sel .cnt { background: var(--surface); }
+  .tagline { font-size: 12px; font-weight: 600; line-height: 1.4;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tagline.hol { color: var(--holiday); }
+  .tagline.mkp { color: var(--makeup); }
+
+  /* 隱藏六日後每格夠寬，六人以上折成兩欄（列數由 JS 給），不再出現「還有 N 人」 */
+  .who { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1px 10px; }
+  .who-row { display: flex; align-items: center; gap: 7px; font-size: 13px; line-height: 1.6;
+             color: var(--fg); white-space: nowrap; overflow: hidden; }
+  .who-row span { overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 6px; height: 6px; border-radius: 999px; flex: none; }
+  .dot-PM { background: var(--pm); }
+  .dot-RD { background: var(--rd); }
+  .more { padding-left: 13px; font-size: 12.5px; line-height: 1.5; color: var(--fg-3); }
+
+  /* ── 週檢視：一天一列 ── */
+  .wk { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        overflow: hidden; box-shadow: var(--shadow); }
+  .wrow { display: grid; grid-template-columns: 78px 108px minmax(0, 1fr); align-items: center;
+          gap: 14px; min-height: 72px; padding: 13px 18px; width: 100%; text-align: left;
+          background: var(--surface); border-bottom: 1px solid var(--line); }
+  .wrow:last-child { border-bottom: none; }
+  .wrow:hover { background: var(--surface-2); }
+  .wrow.wknd { background: var(--surface-2); }
+  .wrow.hol { background: var(--holiday-bg); }
+  .wrow.mkp { background: var(--makeup-bg); }
+  .wrow.today .wnum { color: var(--accent); }
+  .wrow.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .wrow.sel:hover { background: var(--accent-soft); }
+  .wrow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .wdate { display: flex; align-items: baseline; gap: 8px; }
+  .wnum { font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+          font-size: 21px; font-weight: 500; line-height: 1; color: var(--fg);
+          font-variant-numeric: tabular-nums; }
+  .wrow.hol .wnum { color: var(--holiday); }
+  .wdow { font-size: 13px; color: var(--fg-3); }
+  .wsum { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--fg-2);
+          font-variant-numeric: tabular-nums; }
+  .wsum b { font-weight: 600; }
+  .wnone { font-size: 13px; color: var(--fg-3); }
+
+  /* ── 圖例 ── */
+  .legend { display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+            margin-top: 12px; font-size: 12.5px; color: var(--fg-3); }
+  .lg { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 15px; height: 15px; border-radius: 4px; border: 1px solid var(--line-2); }
 
   /* ── 側欄 ── */
-  .day-list { display: flex; flex-direction: column; gap: 10px; }
-  .day-group .glabel { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
-  .day-group .gitems { display: flex; flex-wrap: wrap; gap: 5px; }
-  .empty { color: var(--muted); font-size: 13px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+           padding: 16px; box-shadow: var(--shadow); }
+  .panel + .panel { margin-top: 16px; }
+  .p-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 13px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .p-title { font-size: 14px; font-weight: 600; letter-spacing: -.008em; }
+  .p-meta { margin-left: auto; font-size: 12.5px; color: var(--fg-3);
+            font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+            font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .grp + .grp { margin-top: 14px; }
+  .grp-label { display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+               font-size: 12.5px; font-weight: 600; color: var(--fg-2); }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; height: 26px; padding: 0 10px;
+          border-radius: 999px; border: 1px solid transparent;
+          font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill.PM { background: var(--pm-bg); color: var(--pm-fg); border-color: var(--pm-bd); }
+  .pill.RD { background: var(--rd-bg); color: var(--rd-fg); border-color: var(--rd-bd); }
+  .subhead { margin: 15px 0 7px; font-size: 12px; font-weight: 600;
+             letter-spacing: .04em; color: var(--fg-3); }
+  .subhead.first { margin-top: 0; }
 
-  .stat { display: grid; grid-template-columns: 6em 2.6em 1fr; align-items: center; gap: 7px; margin-bottom: 5px; }
-  .stat .sname { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .stat .sval { font-size: 13px; color: var(--muted); text-align: right; }
-  .stat .sbar { height: 7px; border-radius: 999px; background: var(--border); overflow: hidden; }
-  .stat .sbar i { display: block; height: 100%; border-radius: 999px; }
-  .stat.PM .sbar i { background: var(--pm); }
-  .stat.RD .sbar i { background: var(--rd); }
-  .subhead { font-size: 12px; font-weight: 600; color: var(--muted); margin: 9px 0 5px; }
+  /* 舊版把「成員名單」與「統計」拆成兩張卡，同一批名字出現兩次；這裡合併成一張表 */
+  .srow { display: grid; grid-template-columns: minmax(0, 1fr) 3.4em 3em 46px;
+          align-items: center; gap: 9px; height: 28px; }
+  .srow.inactive { opacity: .5; }
+  .sname { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+           overflow: hidden; white-space: nowrap; }
+  .sname span { overflow: hidden; text-overflow: ellipsis; }
+  .sday { font-size: 12px; color: var(--fg-3); white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis; }
+  .sval { text-align: right; font-size: 12.5px; color: var(--fg-2);
+          font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+          font-variant-numeric: tabular-nums; }
+  .sbar { height: 5px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+  .sbar i { display: block; height: 100%; border-radius: 999px; }
 
-  .chiprow { display: flex; flex-wrap: wrap; gap: 5px; }
-  .roster { display: flex; flex-direction: column; gap: 5px; }
-  .rrow { display: flex; align-items: center; gap: 8px; }
-  .rnote { font-size: 12px; color: var(--muted); }
-  .tog {
-    border: 1px solid var(--border-strong); background: var(--panel);
-    border-radius: 999px; padding: 3px 10px; font-size: 13px;
+  .hint { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line);
+          font-size: 12.5px; line-height: 1.7; color: var(--fg-3); text-wrap: pretty; }
+  .empty { font-size: 13px; color: var(--fg-3); }
+
+  /* ── 提示橫幅 ── */
+  .banner-wrap { padding: 16px 22px 0; display: flex; flex-direction: column; gap: 10px; }
+  .banner-wrap:empty { padding: 0; }
+  .banner { display: flex; gap: 11px; align-items: flex-start; padding: 12px 14px;
+            border-radius: 10px; border: 1px solid var(--holiday-bd);
+            background: var(--holiday-bg); font-size: 13px; line-height: 1.65; }
+  .banner .bicon { color: var(--holiday); margin-top: 2px; }
+  .banner .btitle { color: var(--holiday); font-weight: 600; }
+  .banner .bbody { flex: 1; min-width: 12em; color: var(--fg-2); text-wrap: pretty; }
+  .banner ul { margin: 6px 0 0; padding-left: 1.2em; }
+  .banner li + li { margin-top: 3px; }
+  .banner .datelink { color: var(--holiday); font-weight: 600; text-decoration: underline;
+                      text-underline-offset: 2px; }
+
+  /* ── 響應式 ──
+     900 以下側欄落到日曆下方；640 以下月曆只留日期與人數，名字交給當日面板。 */
+  @media (max-width: 900px) {
+    .page { grid-template-columns: minmax(0, 1fr); }
+    .page.solo > aside { display: block; }
+    .tb-r { width: 100%; margin-left: 0; }
   }
-  .tog.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  .banner {
-    margin: 0 16px 0; padding: 10px 13px; border-radius: var(--radius);
-    font-size: 13px; display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;
+  @media (max-width: 640px) {
+    .hdr { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 8px 12px; }
+    .page { padding: 16px; gap: 16px; }
+    .banner-wrap { padding: 12px 16px 0; }
+    .cell { min-height: 64px; padding: 8px 4px; align-items: center; justify-content: center; gap: 3px; }
+    .cell-top { flex-direction: column; gap: 3px; min-height: 0; }
+    .cell .who, .cell .more, .cell .tagline { display: none; }
+    .cnt { margin-left: 0; }
+    .cell.hol .cnt { display: none; }
+    .dow { padding: 7px 2px; }
+    .wrow { grid-template-columns: 68px minmax(0, 1fr); gap: 8px 12px; padding: 12px 14px; }
+    .wrow .wsum, .wrow .wnone:first-of-type { grid-column: 2; }
+    .wrow .pills { grid-column: 1 / -1; }
+    .legend { gap: 12px; }
+    .pop { right: auto; left: 0; width: min(268px, calc(100vw - 44px)); }
   }
-  .banner + .banner { margin-top: 8px; }
-  .banner.err  { background: var(--holiday-bg); color: var(--holiday); border: 1px solid var(--holiday-bd); }
-  .banner .bbody { flex: 1; min-width: 12em; }
-  .banner ul { margin: 5px 0 0; padding-left: 1.2em; }
-  .banner-wrap { padding-top: 14px; }
-  .banner-wrap:empty { padding-top: 0; }
-
-  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
 </style>
 </head>
 <body>
 
-<div class="topbar">
+<header class="hdr">
   <h1>WFH 排班表</h1>
-  <span class="sub" id="topsub"></span>
-  <span class="spacer"></span>
-</div>
+  <span class="hdr-sub" id="topsub"></span>
+  <div class="hdr-r">
+    <div class="seg" id="themeseg"></div>
+  </div>
+</header>
 
 <div class="banner-wrap" id="banners"></div>
 
-<div class="layout">
-  <div>
+<div class="page" id="page">
+  <main>
     <div class="toolbar" id="toolbar"></div>
-    <div class="cal-scroll" id="calendar"></div>
-  </div>
+    <div id="calendar"></div>
+    <div class="legend" id="legend"></div>
+  </main>
   <aside id="sidebar"></aside>
 </div>
 
@@ -237,7 +342,6 @@ import {
 } from './scripts/rules.js';
 
 const DOW = ['日', '一', '二', '三', '四', '五', '六'];
-const DAY_LABEL = { 1: '每週一', 2: '每週二', 3: '每週三', 4: '每週四', 5: '每週五' };
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
@@ -245,15 +349,67 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
 const pad = (n) => String(n).padStart(2, '0');
 const todayStr = () => fmt(new Date());
 
+/* ── 圖示：stroke 型 inline SVG，跟著 currentColor 走 ── */
+const svg = (d, size = 16) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" stroke="currentColor"`
+  + ` stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  left:  (s) => svg('<path d="M12.5 4.5 7 10l5.5 5.5"/>', s),
+  right: (s) => svg('<path d="M7.5 4.5 13 10l-5.5 5.5"/>', s),
+  down:  (s) => svg('<path d="M5.5 8 10 12.5 14.5 8"/>', s),
+  sun:   (s) => svg('<circle cx="10" cy="10" r="3.4"/><path d="M10 2.2v1.6M10 16.2v1.6M17.8 10h-1.6'
+                  + 'M3.8 10H2.2M15.5 4.5l-1.1 1.1M5.6 14.4l-1.1 1.1M15.5 15.5l-1.1-1.1M5.6 5.6 4.5 4.5"/>', s),
+  moon:  (s) => svg('<path d="M16.2 11.8A6.6 6.6 0 0 1 8.2 3.8a6.8 6.8 0 1 0 8 8Z"/>', s),
+  warn:  (s) => svg('<path d="M10 3.6 2.9 16.4h14.2L10 3.6Z"/><path d="M10 8.4v3.4"/><path d="M10 14.2h.01"/>', s),
+  panelClose: (s) => svg('<rect x="2.6" y="3.6" width="14.8" height="12.8" rx="2.6"/>'
+                       + '<path d="M12.4 3.6v12.8"/><path d="M6.5 8.3 8.3 10l-1.8 1.7"/>', s),
+  panelOpen:  (s) => svg('<rect x="2.6" y="3.6" width="14.8" height="12.8" rx="2.6"/>'
+                       + '<path d="M12.4 3.6v12.8"/><path d="M8.3 8.3 6.5 10l1.8 1.7"/>', s),
+};
+
 // 這是純檢視工具：排班與成員都在 data/schedule.json 裡改，網頁不寫入任何資料。
 const state = {
   view: 'month',
   cursor: todayStr(),        // 檢視中的月份／週（用該期間內任一天表示）
   selected: todayStr(),      // 側欄名單的對象
   filters: { groups: new Set(['PM', 'RD']), memberIds: null }, // memberIds=null 代表不篩人員
+  ui: { sidebar: true, memberPop: false },
   data: null,
   holidays: null,
 };
+
+/* ── 使用者偏好（只有這兩項寫進 localStorage）───────── */
+
+const store = {
+  get(k, fallback) { try { return localStorage.getItem(k) ?? fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* 無痕模式忽略 */ } },
+};
+
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
+function applyTheme(mode, persist) {
+  document.documentElement.dataset.theme = mode;
+  if (persist) store.set('wfh.theme', mode);
+  renderThemeToggle();
+}
+
+// 使用者沒手動選過主題以前，繼續跟著系統設定走
+prefersDark.addEventListener('change', (ev) => {
+  if (!store.get('wfh.theme', null)) applyTheme(ev.matches ? 'dark' : 'light', false);
+});
+
+function renderThemeToggle() {
+  const t = currentTheme();
+  $('#themeseg').innerHTML = `
+    <button class="segbtn ${t === 'light' ? 'on' : ''}" data-act="theme" data-theme="light"
+            aria-pressed="${t === 'light'}">${ICON.sun(15)}淺色</button>
+    <button class="segbtn ${t === 'dark' ? 'on' : ''}" data-act="theme" data-theme="dark"
+            aria-pressed="${t === 'dark'}">${ICON.moon(15)}深色</button>`;
+}
 
 /* ── 資料存取 ─────────────────────────────────────────── */
 
@@ -277,6 +433,20 @@ function visibleOn(date) {
   return wfhOn(date, state.data, state.holidays).filter(isVisible);
 }
 
+/* ── 顯示哪幾欄 ───────────────────────────────────────
+ * 預設只留週一～週五：六日沒有人 WFH，留著只是佔掉每格三成的寬度。
+ * 例外是補班日 —— holidays.json 裡 workday:true 的日子在 isWorkdayOn() 眼中
+ * 就是上班日，可以排 WFH。那一欄必須留下來，否則會把真的有人上班的日子藏掉。
+ * 這條規則從資料算出來，不是設定值。
+ */
+function visibleCols(dates) {
+  const cols = [1, 2, 3, 4, 5];
+  for (const extra of [6, 0]) {
+    if (dates.some((d) => dowOf(d) === extra && isWorkdayOn(d, state.holidays))) cols.push(extra);
+  }
+  return cols;
+}
+
 /* ── 日曆 ─────────────────────────────────────────────── */
 
 function monthCells(dateStr) {
@@ -295,69 +465,99 @@ function cellClasses(date, inMonth) {
   const cls = [];
   const h = state.holidays[date];
   const dow = dowOf(date);
-  if (!inMonth) cls.push('outside');
-  if (h && h.workday) cls.push('makeup');
-  else if (h) cls.push('holiday');
-  else if (dow === 0 || dow === 6) cls.push('weekend');
+  if (!inMonth) cls.push('out');
+  else if (h && h.workday) cls.push('mkp');
+  else if (h) cls.push('hol');
+  else if (dow === 0 || dow === 6) cls.push('wknd');
   if (date === todayStr()) cls.push('today');
-  if (date === state.selected) cls.push('selected');
+  if (date === state.selected) cls.push('sel');
   return cls;
 }
 
-function chip(m) {
-  return `<span class="chip ${m.group}">${esc(m.name)}</span>`;
-}
+const nameRow = (m) =>
+  `<span class="who-row"><i class="dot dot-${m.group}"></i><span>${esc(m.name)}</span></span>`;
 
 function renderMonth() {
   const [y, m] = state.cursor.split('-').map(Number);
   const prefix = `${y}-${pad(m)}-`;
-  const cells = monthCells(state.cursor);
+  const all = monthCells(state.cursor);
+  const cols = visibleCols(all.filter((d) => d.startsWith(prefix)));
+  const tracks = `grid-template-columns:repeat(${cols.length},minmax(0,1fr))`;
 
-  const head = [1, 2, 3, 4, 5, 6, 0]
+  const head = cols
     .map((d) => `<div class="dow${d === 0 || d === 6 ? ' off' : ''}">${DOW[d]}</div>`)
     .join('');
 
-  const body = cells.map((date) => {
+  const body = all.filter((date) => cols.includes(dowOf(date))).map((date) => {
     const inMonth = date.startsWith(prefix);
     const h = state.holidays[date];
     const people = inMonth ? visibleOn(date) : [];
-    const shown = people.slice(0, 3);
+    const shown = people.slice(0, 8);
     const rest = people.length - shown.length;
+    // 五人以內維持單欄；超過就折成兩欄，先填滿左欄，PM 才不會被拆開
+    const rows = shown.length <= 5 ? shown.length : Math.ceil(shown.length / 2);
 
     return `<button class="cell ${cellClasses(date, inMonth).join(' ')}"
               data-act="pick" data-date="${date}" ${inMonth ? '' : 'disabled'}>
-      <span class="num">
-        <span>${Number(date.slice(8))}</span>
-        ${h && h.workday ? '<span class="hname">補班</span>' : ''}
+      <span class="cell-top">
+        <span class="daynum">${Number(date.slice(8))}</span>
+        ${people.length ? `<span class="cnt">${people.length}</span>` : ''}
       </span>
-      ${h && !h.workday ? `<span class="hname" title="${esc(h.name)}">${esc(h.name)}</span>` : ''}
-      <span class="names">${shown.map(chip).join('')}</span>
+      ${inMonth && h
+        ? `<span class="tagline ${h.workday ? 'mkp' : 'hol'}"
+             title="${esc(h.name)}">${esc(h.workday ? '補班日' : h.name)}</span>`
+        : ''}
+      ${shown.length
+        ? `<span class="who" style="grid-template-rows:repeat(${rows},auto)">
+             ${shown.map(nameRow).join('')}</span>`
+        : ''}
       ${rest > 0 ? `<span class="more">還有 ${rest} 人</span>` : ''}
     </button>`;
   }).join('');
 
-  return `<div class="grid">${head}${body}</div>`;
+  return `<div class="cal">
+    <div class="dow-row" style="${tracks}">${head}</div>
+    <div class="grid" style="${tracks}">${body}</div>
+  </div>`;
 }
 
 function renderWeek() {
-  const days = weekDays(state.cursor);
+  const all = weekDays(state.cursor);
+  const cols = visibleCols(all);              // 與月檢視同一條規則
+  const days = all.filter((d) => cols.includes(dowOf(d)));
+
   const body = days.map((date) => {
     const h = state.holidays[date];
+    const dow = dowOf(date);
     const people = visibleOn(date);
-    return `<button class="wcell ${cellClasses(date, true).join(' ')}" data-act="pick" data-date="${date}">
-      <span class="whead">
-        ${Number(date.slice(5, 7))}/${Number(date.slice(8))}（${DOW[dowOf(date)]}）
-        ${h ? `· ${esc(h.workday ? '補班' : h.name)}` : ''}
+    const pm = people.filter((p) => p.group === 'PM').length;
+    const rd = people.length - pm;
+
+    let summary;
+    if (h) summary = `<span class="wnone">${esc(h.workday ? '補班日' : h.name)}</span>`;
+    else if (dow === 0 || dow === 6) summary = '<span class="wnone">週末</span>';
+    else if (!people.length) summary = '<span class="wnone">未排班</span>';
+    else summary = `<span class="wsum"><i class="dot dot-PM"></i><b>${pm}</b>`
+                 + `<i class="dot dot-RD"></i><b>${rd}</b></span>`;
+
+    return `<button class="wrow ${cellClasses(date, true).join(' ')}"
+              data-act="pick" data-date="${date}">
+      <span class="wdate">
+        <span class="wnum">${Number(date.slice(5, 7))}/${Number(date.slice(8))}</span>
+        <span class="wdow">${DOW[dow]}</span>
       </span>
-      <span class="wlist">
-        ${people.length
-          ? people.map((m) => `<span>${chip(m)}</span>`).join('')
-          : '<span class="empty">—</span>'}
-      </span>
+      ${summary}
+      ${people.length
+        ? `<span class="pills">${people.map((p) =>
+            `<span class="pill ${p.group}">${esc(p.name)}</span>`).join('')}</span>`
+        : '<span class="wnone">—</span>'}
     </button>`;
   }).join('');
-  return `<div class="week">${body}</div>`;
+
+  return `<div class="wk">${body}</div>`;
 }
+
+/* ── 工具列 ───────────────────────────────────────────── */
 
 function renderToolbar() {
   let title;
@@ -365,10 +565,12 @@ function renderToolbar() {
     const [y, m] = state.cursor.split('-').map(Number);
     title = `${y} 年 ${m} 月`;
   } else {
-    const mon = weekKeyOf(state.cursor);
-    const sun = addDays(mon, 6);
-    title = `${mon.slice(0, 4)} 年 ${Number(mon.slice(5, 7))}/${Number(mon.slice(8))}`
-          + ` – ${Number(sun.slice(5, 7))}/${Number(sun.slice(8))}`;
+    // 標題跟著實際顯示的範圍走，不要寫成 Mon–Sun 卻只畫五列
+    const all = weekDays(state.cursor);
+    const cols = visibleCols(all);
+    const days = all.filter((d) => cols.includes(dowOf(d)));
+    const a = days[0], b = days[days.length - 1];
+    title = `${Number(a.slice(5, 7))}/${Number(a.slice(8))} – ${Number(b.slice(5, 7))}/${Number(b.slice(8))}`;
   }
 
   // 週檢視多一個「本週已排幾人」，這是主管檢查漏排最自然的位置
@@ -376,163 +578,179 @@ function renderToolbar() {
   if (state.view === 'week') {
     const pool = state.data.members.filter(isVisible);
     const scheduled = new Set();
-    for (const d of weekDays(state.cursor)) {
-      for (const m of visibleOn(d)) scheduled.add(m.id);
-    }
-    coverage = `<span class="sub">本週已排 ${scheduled.size}/${pool.length} 人</span>`;
+    for (const d of weekDays(state.cursor)) for (const m of visibleOn(d)) scheduled.add(m.id);
+    coverage = `<span class="cover">本週已排 ${scheduled.size}/${pool.length} 人</span>`;
   }
 
+  const f = state.filters;
+  const total = state.data.members.length;
+  const picked = f.memberIds === null ? total : f.memberIds.size;
+  const groupTogs = ['PM', 'RD'].map((g) =>
+    `<button class="tog ${f.groups.has(g) ? 'on' : ''}" data-act="fgroup" data-group="${g}"
+       aria-pressed="${f.groups.has(g)}"><i class="dot dot-${g}"></i>${g}</button>`).join('');
+
+  const members = state.data.members.map((m) => {
+    const on = !f.memberIds || f.memberIds.has(m.id);
+    return `<button class="tog ${on ? 'on' : ''}" data-act="fmember" data-id="${m.id}"
+              aria-pressed="${on}">${esc(m.name)}</button>`;
+  }).join('');
+
+  // 收合後把選定日的脈絡留在工具列，不要整個消失
+  const sideBtn = state.ui.sidebar
+    ? `<span class="vrule"></span>
+       <button class="ibtn" data-act="side" title="收合側欄" aria-label="收合側欄">${ICON.panelClose(16)}</button>`
+    : `<span class="vrule"></span>
+       <span class="ctx">${Number(state.selected.slice(5, 7))}/${Number(state.selected.slice(8))}（${DOW[dowOf(state.selected)]}）<b>WFH ${visibleOn(state.selected).length} 人</b></span>
+       <button class="ibtn" data-act="side" title="展開側欄" aria-label="展開側欄">${ICON.panelOpen(16)}</button>`;
+
   return `
-    <button class="btn icon" data-act="prev" title="上一${state.view === 'month' ? '月' : '週'}">◀</button>
-    <span class="title">${title}</span>
-    <button class="btn icon" data-act="next" title="下一${state.view === 'month' ? '月' : '週'}">▶</button>
-    <button class="btn" data-act="today">今天</button>
-    <span class="seg">
-      <button class="btn ${state.view === 'month' ? 'on' : ''}" data-act="view" data-view="month">月</button>
-      <button class="btn ${state.view === 'week' ? 'on' : ''}" data-act="view" data-view="week">週</button>
-    </span>
-    ${coverage}`;
+    <div class="tb-l">
+      <button class="ibtn" data-act="prev" title="上一${state.view === 'month' ? '月' : '週'}"
+        aria-label="上一${state.view === 'month' ? '月' : '週'}">${ICON.left(16)}</button>
+      <h2 class="tb-title">${title}</h2>
+      <button class="ibtn" data-act="next" title="下一${state.view === 'month' ? '月' : '週'}"
+        aria-label="下一${state.view === 'month' ? '月' : '週'}">${ICON.right(16)}</button>
+      <button class="btn" data-act="today">今天</button>
+      ${coverage}
+    </div>
+    <div class="tb-r">
+      <span class="seg">
+        <button class="segbtn ${state.view === 'month' ? 'on' : ''}" data-act="view" data-view="month">月</button>
+        <button class="segbtn ${state.view === 'week' ? 'on' : ''}" data-act="view" data-view="week">週</button>
+      </span>
+      <span class="vrule"></span>
+      <span class="tb-label">顯示</span>
+      ${groupTogs}
+      <span class="pop-wrap">
+        <button class="tog ${picked < total ? 'on' : ''}" data-act="fpop"
+          aria-expanded="${state.ui.memberPop}">人員・${picked === total ? '全部' : ''}${picked} 人${ICON.down(14)}</button>
+        <span class="pop" id="memberpop" ${state.ui.memberPop ? '' : 'hidden'}>
+          <span class="chiprow">${members}</span>
+          <span class="pop-foot">
+            <button class="btn" data-act="fall">全選</button>
+            <button class="btn" data-act="fnone">全不選</button>
+          </span>
+        </span>
+      </span>
+      ${sideBtn}
+    </div>`;
+}
+
+function renderLegend() {
+  return `
+    <span class="lg"><i class="dot dot-PM"></i>PM</span>
+    <span class="lg"><i class="dot dot-RD"></i>RD</span>
+    <span class="lg"><i class="sw" style="background:var(--holiday-bg);border-color:var(--holiday-bd)"></i>國定假日</span>
+    <span class="lg"><i class="sw" style="background:var(--makeup-bg);border-color:var(--makeup-bd)"></i>補班日</span>
+    <span class="lg"><i class="sw" style="background:var(--accent);border-color:var(--accent);border-radius:999px"></i>今天</span>`;
 }
 
 /* ── 側欄 ─────────────────────────────────────────────── */
 
-function renderDayList() {
+function renderDayPanel() {
   const date = state.selected;
   const h = state.holidays[date];
   const off = !isWorkdayOn(date, state.holidays);
   const people = visibleOn(date);
+  const [, m, d] = date.split('-').map(Number);
 
   let inner;
   if (off) {
-    const why = h ? esc(h.name) : '週末';
-    inner = `<div class="empty">${why} · 不排班</div>`;
+    inner = `<div class="empty">${h ? esc(h.name) : '週末'} · 不排班</div>`;
   } else if (!people.length) {
-    const starts = state.data.members.map((m) => m.startDate).filter(Boolean).sort();
+    const starts = state.data.members.map((x) => x.startDate).filter(Boolean).sort();
     const allNotYet = starts.length === state.data.members.length && date < starts[0];
     inner = allNotYet
       ? `<div class="empty">全體成員自 ${esc(starts[0])} 起才開始排班</div>`
       : '<div class="empty">這天沒有人 WFH（或已被篩選隱藏）</div>';
   } else {
     inner = ['PM', 'RD'].map((g) => {
-      const items = people.filter((m) => m.group === g);
+      const items = people.filter((x) => x.group === g);
       if (!items.length) return '';
-      return `<div class="day-group">
-        <div class="glabel">${g} · ${items.length} 人</div>
-        <div class="gitems">${items.map(chip).join('')}</div>
+      return `<div class="grp">
+        <div class="grp-label"><i class="dot dot-${g}"></i>${g} · ${items.length} 人</div>
+        <div class="pills">${items.map((x) =>
+          `<span class="pill ${g}">${esc(x.name)}</span>`).join('')}</div>
       </div>`;
     }).join('');
   }
 
-  return `<div class="card">
-    <h3>${date}（${DOW[dowOf(date)]}）WFH 名單</h3>
-    <div class="day-list">${inner}</div>
-  </div>`;
+  return `<section class="panel">
+    <div class="p-head">
+      <span class="p-title">${m} 月 ${d} 日（${DOW[dowOf(date)]}）</span>
+      <span class="p-meta">${off ? '不排班' : `WFH ${people.length} 人`}</span>
+    </div>
+    ${inner}
+  </section>`;
 }
 
-function renderStats() {
+/** PM 依固定日排班（day 1–5），RD 沒有固定日，由主管逐日安排 */
+const dayTag = (m) => (m.day == null ? '逐日' : `週${DOW[m.day]}`);
+
+function renderStatsPanel() {
   const [y, m] = state.cursor.split('-').map(Number);
   const counts = monthlyCounts(y, m, state.data, state.holidays);
   const shown = state.data.members.filter(isVisible);
   const max = Math.max(1, ...shown.map((mem) => counts[mem.id] || 0));
+  // 到職／離職一律拿「檢視中的月份」比對，不是拿今天。這張表列的是該月天數，
+  // 用今天判斷會出現「整排灰掉、卻各自有 3 天」的矛盾。
+  const monthStart = `${y}-${pad(m)}-01`;
+  const monthEnd = monthDays(y, m).at(-1);
 
-  const rows = ['PM', 'RD'].map((g) => {
+  const blocks = ['PM', 'RD'].map((g, i) => {
     const items = shown.filter((mem) => mem.group === g);
     if (!items.length) return '';
-    return `<div class="subhead">${g}</div>` + items.map((mem) => {
+    const rows = items.map((mem) => {
       const n = counts[mem.id] || 0;
-      return `<div class="stat ${g}">
-        <span class="sname" title="${esc(mem.name)}">${esc(mem.name)}</span>
+      // 整個月都不在職才淡化；月中才到職的人仍是正常列，只是換掉固定日的標示
+      const inactive = (mem.startDate && mem.startDate > monthEnd)
+                    || (mem.endDate && mem.endDate < monthStart);
+      let tag = dayTag(mem), title = `${g} · ${dayTag(mem)}`;
+      if (mem.startDate && mem.startDate > monthStart) {
+        tag = `${Number(mem.startDate.slice(5, 7))}/${Number(mem.startDate.slice(8))} 起`;
+        title += ` · ${mem.startDate} 起`;
+      } else if (mem.endDate && mem.endDate < monthEnd) {
+        tag = `${Number(mem.endDate.slice(5, 7))}/${Number(mem.endDate.slice(8))} 止`;
+        title += ` · ${mem.endDate} 止`;
+      }
+      return `<div class="srow ${inactive ? 'inactive' : ''}" title="${esc(title)}">
+        <span class="sname"><i class="dot dot-${g}"></i><span>${esc(mem.name)}</span></span>
+        <span class="sday">${esc(tag)}</span>
         <span class="sval">${n} 天</span>
-        <span class="sbar"><i style="width:${(n / max) * 100}%"></i></span>
+        <span class="sbar"><i style="width:${Math.round((n / max) * 100)}%;background:var(--${g.toLowerCase()})"></i></span>
       </div>`;
     }).join('');
+    return `<div class="subhead${i === 0 ? ' first' : ''}">${g} · ${items.length} 人</div>${rows}`;
   }).join('');
 
-  return `<div class="card">
-    <h3>${y} 年 ${m} 月 WFH 天數</h3>
-    ${rows || '<div class="empty">沒有符合篩選的成員</div>'}
-    <div class="hint">只計上班日；國定假日與週末不計。</div>
-  </div>`;
-}
-
-function renderFilters() {
-  const f = state.filters;
-  const groups = ['PM', 'RD'].map((g) =>
-    `<button class="tog ${f.groups.has(g) ? 'on' : ''}" data-act="fgroup" data-group="${g}">${g}</button>`,
-  ).join('');
-
-  const people = state.data.members.map((m) => {
-    const on = !f.memberIds || f.memberIds.has(m.id);
-    return `<button class="tog ${on ? 'on' : ''}" data-act="fmember" data-id="${m.id}">${esc(m.name)}</button>`;
-  }).join('');
-
-  return `<div class="card">
-    <h3>篩選</h3>
-    <div class="chiprow">${groups}</div>
-    <div class="subhead">人員</div>
-    <div class="chiprow">${people}</div>
-    <div class="chiprow" style="margin-top:8px">
-      <button class="btn" data-act="fall">全選</button>
-      <button class="btn" data-act="fnone">全不選</button>
+  return `<section class="panel">
+    <div class="p-head">
+      <span class="p-title">${m} 月 WFH 天數</span>
+      <span class="p-meta">${shown.length}/${state.data.members.length} 人</span>
     </div>
-    <div class="hint">只看某人：先「全不選」再點他。</div>
-  </div>`;
+    ${blocks || '<div class="empty">沒有符合篩選的成員</div>'}
+    <p class="hint">只計上班日；國定假日與週末不計。要新增或修改成員、調整排班，
+      請編輯 <code>data/schedule.json</code>。</p>
+  </section>`;
 }
 
-function dayLabelBtn(date) {
-  return `<button data-act="pick" data-date="${date}">${shortLabel(date)}</button>`;
-}
-
-function renderRoster() {
-  const today = todayStr();
-
-  // PM 依固定日細分（A 組每週一、B 組每週五就是這樣分出來的）；RD 沒有固定日
-  const groups = [];
-  for (const g of ['PM', 'RD']) {
-    for (const day of [1, 2, 3, 4, 5]) {
-      const items = state.data.members.filter((m) => m.group === g && m.day === day);
-      if (items.length) groups.push({ label: `${g} · ${DAY_LABEL[day]}`, items });
-    }
-    const noDay = state.data.members.filter((m) => m.group === g && m.day == null);
-    if (noDay.length) {
-      groups.push({ label: g === 'RD' ? 'RD · 由主管逐日安排' : `${g} · 無固定日`, items: noDay });
-    }
-  }
-
-  const body = groups.map((g) => `
-    <div class="subhead">${esc(g.label)} · ${g.items.length} 人</div>
-    <div class="roster">${g.items.map((m) => {
-      const notes = [];
-      if (m.startDate && today < m.startDate) notes.push(`${m.startDate} 起`);
-      if (m.endDate && today > m.endDate) notes.push(`${m.endDate} 止`);
-      return `<div class="rrow">${chip(m)}${notes.length
-        ? `<span class="rnote">${esc(notes.join('、'))}</span>` : ''}</div>`;
-    }).join('')}</div>`).join('');
-
-  return `<div class="card">
-    <h3>成員名單（${state.data.members.length} 人）</h3>
-    ${body}
-    <div class="hint">要新增或修改成員、調整排班，請編輯 <code>data/schedule.json</code>。</div>
-  </div>`;
-}
+/* ── 提示橫幅 ─────────────────────────────────────────── */
 
 function renderBanners() {
-  const out = [];
-
   const conflicts = findConflicts(state.data, state.holidays);
-  if (conflicts.length) {
-    out.push(`<div class="banner err">
-      <div class="bbody">
-        <strong>有 ${conflicts.length} 筆「一人一週一天」衝突</strong>
-        —— 不會自動修改，請自行決定保留哪一天。
-        <ul>${conflicts.map((c) =>
-          `<li>${esc(c.name)}：${c.weekKey} 那週排了 ${c.dates.length} 天（${c.dates.map((d) =>
-            dayLabelBtn(d)).join('、')}）</li>`).join('')}</ul>
-      </div>
-    </div>`);
-  }
+  if (!conflicts.length) return '';
 
-  return out.join('');
+  return `<div class="banner">
+    <span class="bicon">${ICON.warn(17)}</span>
+    <div class="bbody">
+      <span class="btitle">有 ${conflicts.length} 筆「一人一週一天」衝突</span>
+      —— 不會自動修改，請自行決定保留哪一天。
+      <ul>${conflicts.map((c) =>
+        `<li>${esc(c.name)}：${c.weekKey} 那週排了 ${c.dates.length} 天（${c.dates.map((d) =>
+          `<button class="datelink" data-act="pick" data-date="${d}">${shortLabel(d)}</button>`
+        ).join('、')}）</li>`).join('')}</ul>
+    </div>
+  </div>`;
 }
 
 /* ── 主渲染 ───────────────────────────────────────────── */
@@ -540,21 +758,31 @@ function renderBanners() {
 function render() {
   $('#topsub').textContent =
     `${state.data.members.length} 人 · 資料更新於 ${state.data.updatedAt || '—'}`;
+  $('#page').classList.toggle('solo', !state.ui.sidebar);
   $('#banners').innerHTML = renderBanners();
   $('#toolbar').innerHTML = renderToolbar();
   $('#calendar').innerHTML = state.view === 'month' ? renderMonth() : renderWeek();
-  $('#sidebar').innerHTML =
-    renderDayList() + renderStats() + renderFilters() + renderRoster();
+  $('#legend').innerHTML = renderLegend();
+  $('#sidebar').innerHTML = renderDayPanel() + renderStatsPanel();
 }
 
 /* ── 事件（委派）─────────────────────────────────────── */
 
 document.addEventListener('click', (ev) => {
   const el = ev.target.closest('[data-act]');
-  if (!el) return;
-  const act = el.dataset.act;
 
-  switch (act) {
+  // 點在浮層以外就把人員篩選關起來
+  if (state.ui.memberPop && !ev.target.closest('.pop-wrap')) {
+    state.ui.memberPop = false;
+    if (!el) { render(); return; }
+  }
+  if (!el) return;
+
+  switch (el.dataset.act) {
+    case 'theme':
+      applyTheme(el.dataset.theme, true);
+      break;
+
     case 'pick':
       state.selected = el.dataset.date;
       state.cursor = el.dataset.date;
@@ -563,7 +791,7 @@ document.addEventListener('click', (ev) => {
 
     case 'prev':
     case 'next': {
-      const dir = act === 'next' ? 1 : -1;
+      const dir = el.dataset.act === 'next' ? 1 : -1;
       if (state.view === 'week') state.cursor = addDays(state.cursor, dir * 7);
       else {
         const [y, m] = state.cursor.split('-').map(Number);
@@ -587,6 +815,17 @@ document.addEventListener('click', (ev) => {
       render();
       break;
 
+    case 'side':
+      state.ui.sidebar = !state.ui.sidebar;
+      store.set('wfh.sidebar', state.ui.sidebar ? '1' : '0');
+      render();
+      break;
+
+    case 'fpop':
+      state.ui.memberPop = !state.ui.memberPop;
+      render();
+      break;
+
     case 'fgroup': {
       const g = el.dataset.group;
       const s = state.filters.groups;
@@ -602,6 +841,7 @@ document.addEventListener('click', (ev) => {
       if (set.has(id)) set.delete(id); else set.add(id);
       // 空集合是合法狀態：「全不選」後只點一人，是「只看某人」的操作路徑
       state.filters.memberIds = set.size === all.length ? null : set;
+      state.ui.memberPop = true;   // 連續點選時浮層要留著
       render();
       break;
     }
@@ -609,17 +849,28 @@ document.addEventListener('click', (ev) => {
     case 'fall':
       state.filters.groups = new Set(['PM', 'RD']);
       state.filters.memberIds = null;
+      state.ui.memberPop = true;
       render();
       break;
 
     case 'fnone':
       state.filters.memberIds = new Set();
+      state.ui.memberPop = true;
       render();
       break;
   }
 });
 
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && state.ui.memberPop) {
+    state.ui.memberPop = false;
+    render();
+  }
+});
+
 /* ── 啟動 ─────────────────────────────────────────────── */
+
+renderThemeToggle();
 
 (async function init() {
   try {
@@ -634,6 +885,8 @@ document.addEventListener('click', (ev) => {
     state.data.members ||= [];
     state.data.assignments ||= {};
 
+    state.ui.sidebar = store.get('wfh.sidebar', '1') !== '0';
+
     // 全員都還沒到職時，落在今天會是一片空白的月曆 —— 改從最早的到職日開始看
     const starts = state.data.members.map((m) => m.startDate).filter(Boolean).sort();
     const start = starts.length && todayStr() < starts[0] ? starts[0] : todayStr();
@@ -642,13 +895,13 @@ document.addEventListener('click', (ev) => {
 
     render();
   } catch (err) {
-    document.querySelector('.layout').innerHTML = `<div class="card">
-      <h3>資料載入失敗</h3>
+    $('#page').innerHTML = `<main><section class="panel">
+      <div class="p-head"><span class="p-title">資料載入失敗</span></div>
       <p>${esc(err.message)}</p>
       <p class="hint">這個頁面用 <code>fetch</code> 讀取 <code>data/*.json</code>，
       直接以 <code>file://</code> 開啟會被瀏覽器的 CORS 規則擋下。
       請在專案目錄執行 <code>npx serve .</code> 後從 http://localhost 開啟。</p>
-    </div>`;
+    </section></main>`;
   }
 })();
 </script>
