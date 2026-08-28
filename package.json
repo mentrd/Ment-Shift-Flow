@@ -1,0 +1,13 @@
+{
+  "name": "ment-shift-flow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WFH 排班日曆，部署於 GitHub Pages",
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve .",
+    "test": "node --test scripts/test-rules.js",
+    "validate": "node scripts/validate-data.js",
+    "holidays": "node scripts/fetch-holidays.js"
+  }
+}

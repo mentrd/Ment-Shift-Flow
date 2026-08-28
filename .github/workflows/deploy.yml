@@ -1,0 +1,46 @@
+name: Deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 規則邏輯的回歸測試（前端與 validate 共用 scripts/rules.js）
+      - name: 測試排班規則
+        run: node --test scripts/test-rules.js
+
+      # schedule.json 是人工貼回 repo 的，貼壞或排出衝突都擋在這裡
+      - name: 檢查資料
+        run: node scripts/validate-data.js
+
+      - uses: actions/configure-pages@v5
+
+      # 純靜態站，沒有 build 步驟
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

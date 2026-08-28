@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ment Shift Flow — WFH 排班表</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #dfe3e8;
+    --border-strong: #c3cad3;
+    --text: #1c2430;
+    --muted: #6b7684;
+    --faint: #a3acb8;
+    --accent: #2563eb;
+    --pm: #1d4ed8;
+    --pm-bg: #e5edff;
+    --rd: #047857;
+    --rd-bg: #d9f2e9;
+    --holiday: #c02636;
+    --holiday-bg: #fdecee;
+    --makeup-bg: #fdf5e0;
+    --warn: #b45309;
+    --warn-bg: #fef3c7;
+    --today: #2563eb;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14181d;
+      --panel: #1c2127;
+      --border: #2e353d;
+      --border-strong: #3f4854;
+      --text: #e6e9ed;
+      --muted: #9aa4b0;
+      --faint: #667080;
+      --accent: #6b9bff;
+      --pm: #a9c4ff;
+      --pm-bg: #1f2c47;
+      --rd: #86e0bd;
+      --rd-bg: #16362c;
+      --holiday: #ff9aa5;
+      --holiday-bg: #3a1f24;
+      --makeup-bg: #38301b;
+      --warn: #f0c674;
+      --warn-bg: #3a2f16;
+      --today: #6b9bff;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+
+  /* ── 版面 ── */
+  .topbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 18px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 { font-size: 16px; }
+  .topbar .sub { color: var(--muted); font-size: 12px; }
+  .spacer { flex: 1; }
+
+  .layout {
+    display: grid; grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px; padding: 16px; align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 14px;
+  }
+  .card > h3 {
+    font-size: 13px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .04em; margin-bottom: 10px;
+  }
+
+  /* ── 工具列 ── */
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .toolbar .title { font-size: 17px; font-weight: 600; min-width: 8.5em; }
+  .btn {
+    background: var(--panel); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 5px 10px; line-height: 1.3;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.icon { padding: 5px 9px; font-size: 15px; }
+  .btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.on:hover { color: #fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:disabled:hover { border-color: var(--border-strong); color: inherit; }
+  .seg { display: inline-flex; }
+  .seg .btn { border-radius: 0; }
+  .seg .btn:first-child { border-radius: 6px 0 0 6px; }
+  .seg .btn:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+
+  /* ── 月曆 ── */
+  .cal-scroll { overflow-x: auto; }
+  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
+          background: var(--border); border: 1px solid var(--border); border-radius: 6px;
+          overflow: hidden; min-width: 660px; }
+  .dow { background: var(--panel); padding: 6px 8px; font-size: 12px; color: var(--muted); text-align: center; }
+  .dow.off { color: var(--faint); }
+
+  .cell {
+    background: var(--panel); min-height: 92px; padding: 6px 7px;
+    display: flex; flex-direction: column; gap: 4px;
+    border: none; text-align: left; width: 100%;
+  }
+  .cell:hover { background: var(--bg); }
+  .cell .num { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; gap: 5px; align-items: baseline; }
+  .cell.outside { opacity: .4; cursor: default; }
+  .cell.outside:hover { background: var(--panel); }
+  .cell.weekend { background: color-mix(in srgb, var(--bg) 70%, var(--panel)); }
+  .cell.holiday { background: var(--holiday-bg); }
+  .cell.holiday .num { color: var(--holiday); }
+  .cell.makeup { background: var(--makeup-bg); }
+  .cell.today .num { color: var(--today); }
+  .cell.today { box-shadow: inset 0 0 0 2px var(--today); }
+  .cell.selected { box-shadow: inset 0 0 0 2px var(--accent); background: var(--bg); }
+  .cell.today.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cell .hname {
+    font-size: 11px; color: var(--holiday); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .cell .names { display: flex; flex-wrap: wrap; gap: 3px; }
+  .cell .more { font-size: 11px; color: var(--muted); }
+
+  .chip {
+    display: inline-block; font-size: 11px; line-height: 1.5;
+    padding: 1px 6px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip.PM { background: var(--pm-bg); color: var(--pm); }
+  .chip.RD { background: var(--rd-bg); color: var(--rd); }
+
+  /* ── 週檢視 ── */
+  .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px;
+          background: var(--border); border: 1px solid var(--border);
+          border-radius: 6px; overflow: hidden; min-width: 660px; }
+  .wcell { background: var(--panel); padding: 8px; min-height: 210px;
+           display: flex; flex-direction: column; gap: 6px;
+           border: none; text-align: left; width: 100%; align-items: stretch; }
+  .wcell:hover { background: var(--bg); }
+  .wcell.weekend { background: color-mix(in srgb, var(--bg) 70%, var(--panel)); }
+  .wcell.holiday { background: var(--holiday-bg); }
+  .wcell.makeup { background: var(--makeup-bg); }
+  .wcell.today { box-shadow: inset 0 0 0 2px var(--today); }
+  .wcell.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .wcell .whead { font-size: 12px; color: var(--muted); }
+  .wcell.holiday .whead { color: var(--holiday); }
+  .wcell .wlist { display: flex; flex-direction: column; gap: 3px; }
+
+  /* ── 側欄 ── */
+  .day-list { display: flex; flex-direction: column; gap: 10px; }
+  .day-group .glabel { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .day-group .gitems { display: flex; flex-wrap: wrap; gap: 4px; }
+  .empty { color: var(--faint); font-size: 13px; }
+
+  .stat { display: grid; grid-template-columns: 5.5em 2.2em 1fr; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .stat .sname { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat .sval { font-size: 12px; color: var(--muted); text-align: right; }
+  .stat .sbar { height: 7px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .stat .sbar i { display: block; height: 100%; border-radius: 999px; }
+  .stat.PM .sbar i { background: var(--pm); }
+  .stat.RD .sbar i { background: var(--rd); }
+  .subhead { font-size: 11px; color: var(--faint); margin: 8px 0 4px; }
+
+  .chiprow { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tog {
+    border: 1px solid var(--border-strong); background: var(--panel);
+    border-radius: 999px; padding: 2px 9px; font-size: 12px;
+  }
+  .tog.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── 日編輯面板 ── */
+  .mrow {
+    display: flex; align-items: center; gap: 7px; padding: 3px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  }
+  .mrow:last-child { border-bottom: none; }
+  .mrow label { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; cursor: pointer; }
+  .mrow input[type=checkbox] { accent-color: var(--accent); flex: none; }
+  .mrow.disabled label { cursor: not-allowed; color: var(--muted); }
+  .mrow .mname { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mrow .tag { font-size: 10px; color: var(--faint); flex: none; }
+  .mrow .why { font-size: 11px; color: var(--muted); flex: none; }
+  .mrow .why button {
+    background: none; border: none; padding: 0; font-size: 11px;
+    color: var(--accent); text-decoration: underline; cursor: pointer;
+  }
+
+  .msg { font-size: 12px; border-radius: 6px; padding: 7px 9px; margin-top: 8px; white-space: pre-line; }
+  .msg.info { background: var(--pm-bg); color: var(--pm); }
+  .msg.warn { background: var(--warn-bg); color: var(--warn); }
+  .msg.err  { background: var(--holiday-bg); color: var(--holiday); }
+
+  .banner {
+    margin: 0 16px 0; padding: 10px 13px; border-radius: var(--radius);
+    font-size: 13px; display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .banner + .banner { margin-top: 8px; }
+  .banner.err  { background: var(--holiday-bg); color: var(--holiday); border: 1px solid color-mix(in srgb, var(--holiday) 35%, transparent); }
+  .banner.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+  .banner .bbody { flex: 1; min-width: 12em; }
+  .banner ul { margin: 5px 0 0; padding-left: 1.2em; }
+  .banner-wrap { padding-top: 14px; }
+  .banner-wrap:empty { padding-top: 0; }
+
+  .fields { display: grid; gap: 7px; }
+  .fields label { font-size: 12px; color: var(--muted); display: grid; gap: 3px; }
+  input[type=text], input[type=date], input[type=number], select {
+    font: inherit; padding: 4px 7px; border-radius: 5px;
+    border: 1px solid var(--border-strong); background: var(--panel); color: var(--text);
+  }
+  .radios { display: flex; gap: 3px; flex-wrap: wrap; }
+  .radios label { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--text); }
+
+  details.mgmt summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.mgmt summary:hover { color: var(--accent); }
+  .mgmt-row { border-bottom: 1px solid var(--border); padding: 8px 0; }
+  .mgmt-row:last-of-type { border-bottom: none; }
+  .mgmt-row .top { display: flex; align-items: center; gap: 6px; }
+  .mgmt-row .top .mname { flex: 1; font-size: 13px; }
+  .hint { font-size: 11px; color: var(--faint); margin-top: 6px; }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>WFH 排班表</h1>
+  <span class="sub" id="topsub"></span>
+  <span class="spacer"></span>
+  <span id="export-slot"></span>
+</div>
+
+<div class="banner-wrap" id="banners"></div>
+
+<div class="layout">
+  <div>
+    <div class="toolbar" id="toolbar"></div>
+    <div class="cal-scroll" id="calendar"></div>
+  </div>
+  <aside id="sidebar"></aside>
+</div>
+
+<script type="module">
+/*
+ * 前端全部邏輯。排班規則不寫在這裡 —— 一律 import scripts/rules.js，
+ * 與 scripts/validate-data.js 共用同一份原始碼，避免前端擋得住、CI 放過。
+ */
+import {
+  addDays, dowOf, fmt, shortLabel, isValidDate,
+  weekKeyOf, weekDays, isWorkdayOn, isActiveOn, indexById,
+  wfhOn, wfhDaysInWeek, canAssign, conflictsForWeek, findConflicts,
+  monthDays, monthlyCounts,
+} from './scripts/rules.js';
+
+const DOW = ['日', '一', '二', '三', '四', '五', '六'];
+const DRAFT_KEY = 'msf-draft-v1';
+const REPO_EDIT_URL = 'https://github.com/mentrd/Ment-Shift-Flow/edit/main/data/schedule.json';
+
+const $ = (sel) => document.querySelector(sel);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = (n) => String(n).padStart(2, '0');
+const todayStr = () => fmt(new Date());
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+const state = {
+  view: 'month',
+  cursor: todayStr(),        // 檢視中的月份／週（用該期間內任一天表示）
+  selected: todayStr(),      // 側欄與編輯面板的對象
+  filters: { groups: new Set(['PM', 'RD']), memberIds: null }, // memberIds=null 代表不篩人員
+  data: null,
+  holidays: null,
+  baseUpdatedAt: null,       // repo 檔案的 updatedAt，用來判斷草稿是否過期
+  dirty: false,
+  panelMsg: null,            // 日編輯面板下方的提示 { kind, text }
+  draftPrompt: null,         // 載入時偵測到的本機草稿
+};
+
+/* ── 資料存取 ─────────────────────────────────────────── */
+
+async function loadJson(path) {
+  const res = await fetch(path, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
+  return res.json();
+}
+
+function readDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return d && d.data && Array.isArray(d.data.members) ? d : null;
+  } catch { return null; }
+}
+
+function saveDraft() {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      base: state.baseUpdatedAt,
+      savedAt: new Date().toISOString(),
+      data: state.data,
+    }));
+  } catch { /* 隱私模式或空間不足；草稿只是防手滑，失敗不影響功能 */ }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch {}
+}
+
+function markDirty() {
+  state.dirty = true;
+  saveDraft();
+  render();
+}
+
+/* ── 篩選 ─────────────────────────────────────────────── */
+
+function isVisible(m) {
+  if (!state.filters.groups.has(m.group)) return false;
+  // memberIds === null 代表不做人員層篩選；空集合代表「全不選」，要真的擋掉所有人
+  if (state.filters.memberIds !== null && !state.filters.memberIds.has(m.id)) return false;
+  return true;
+}
+
+/** 該日 WFH 且通過篩選的人 —— 日曆、側欄、統計都用這個，三處數字才會一致 */
+function visibleOn(date) {
+  return wfhOn(date, state.data, state.holidays).filter(isVisible);
+}
+
+/* ── 日曆 ─────────────────────────────────────────────── */
+
+function monthCells(dateStr) {
+  const [y, m] = dateStr.split('-').map(Number);
+  const last = monthDays(y, m).at(-1);
+  const cells = [];
+  let d = weekKeyOf(`${y}-${pad(m)}-01`);
+  while (d <= last || cells.length % 7 !== 0) {
+    cells.push(d);
+    d = addDays(d, 1);
+  }
+  return cells;
+}
+
+function cellClasses(date, inMonth) {
+  const cls = [];
+  const h = state.holidays[date];
+  const dow = dowOf(date);
+  if (!inMonth) cls.push('outside');
+  if (h && h.workday) cls.push('makeup');
+  else if (h) cls.push('holiday');
+  else if (dow === 0 || dow === 6) cls.push('weekend');
+  if (date === todayStr()) cls.push('today');
+  if (date === state.selected) cls.push('selected');
+  return cls;
+}
+
+function chip(m) {
+  return `<span class="chip ${m.group}">${esc(m.name)}</span>`;
+}
+
+function renderMonth() {
+  const [y, m] = state.cursor.split('-').map(Number);
+  const prefix = `${y}-${pad(m)}-`;
+  const cells = monthCells(state.cursor);
+
+  const head = [1, 2, 3, 4, 5, 6, 0]
+    .map((d) => `<div class="dow${d === 0 || d === 6 ? ' off' : ''}">${DOW[d]}</div>`)
+    .join('');
+
+  const body = cells.map((date) => {
+    const inMonth = date.startsWith(prefix);
+    const h = state.holidays[date];
+    const people = inMonth ? visibleOn(date) : [];
+    const shown = people.slice(0, 3);
+    const rest = people.length - shown.length;
+
+    return `<button class="cell ${cellClasses(date, inMonth).join(' ')}"
+              data-act="pick" data-date="${date}" ${inMonth ? '' : 'disabled'}>
+      <span class="num">
+        <span>${Number(date.slice(8))}</span>
+        ${h && h.workday ? '<span class="hname">補班</span>' : ''}
+      </span>
+      ${h && !h.workday ? `<span class="hname" title="${esc(h.name)}">${esc(h.name)}</span>` : ''}
+      <span class="names">${shown.map(chip).join('')}</span>
+      ${rest > 0 ? `<span class="more">還有 ${rest} 人</span>` : ''}
+    </button>`;
+  }).join('');
+
+  return `<div class="grid">${head}${body}</div>`;
+}
+
+function renderWeek() {
+  const days = weekDays(state.cursor);
+  const body = days.map((date) => {
+    const h = state.holidays[date];
+    const people = visibleOn(date);
+    return `<button class="wcell ${cellClasses(date, true).join(' ')}" data-act="pick" data-date="${date}">
+      <span class="whead">
+        ${Number(date.slice(5, 7))}/${Number(date.slice(8))}（${DOW[dowOf(date)]}）
+        ${h ? `· ${esc(h.workday ? '補班' : h.name)}` : ''}
+      </span>
+      <span class="wlist">
+        ${people.length
+          ? people.map((m) => `<span>${chip(m)}</span>`).join('')
+          : '<span class="empty">—</span>'}
+      </span>
+    </button>`;
+  }).join('');
+  return `<div class="week">${body}</div>`;
+}
+
+function renderToolbar() {
+  let title;
+  if (state.view === 'month') {
+    const [y, m] = state.cursor.split('-').map(Number);
+    title = `${y} 年 ${m} 月`;
+  } else {
+    const mon = weekKeyOf(state.cursor);
+    const sun = addDays(mon, 6);
+    title = `${mon.slice(0, 4)} 年 ${Number(mon.slice(5, 7))}/${Number(mon.slice(8))}`
+          + ` – ${Number(sun.slice(5, 7))}/${Number(sun.slice(8))}`;
+  }
+
+  // 週檢視多一個「本週已排幾人」，這是主管檢查漏排最自然的位置
+  let coverage = '';
+  if (state.view === 'week') {
+    const pool = state.data.members.filter(isVisible);
+    const scheduled = new Set();
+    for (const d of weekDays(state.cursor)) {
+      for (const m of visibleOn(d)) scheduled.add(m.id);
+    }
+    coverage = `<span class="sub">本週已排 ${scheduled.size}/${pool.length} 人</span>`;
+  }
+
+  return `
+    <button class="btn icon" data-act="prev" title="上一${state.view === 'month' ? '月' : '週'}">◀</button>
+    <span class="title">${title}</span>
+    <button class="btn icon" data-act="next" title="下一${state.view === 'month' ? '月' : '週'}">▶</button>
+    <button class="btn" data-act="today">今天</button>
+    <span class="seg">
+      <button class="btn ${state.view === 'month' ? 'on' : ''}" data-act="view" data-view="month">月</button>
+      <button class="btn ${state.view === 'week' ? 'on' : ''}" data-act="view" data-view="week">週</button>
+    </span>
+    ${coverage}`;
+}
+
+/* ── 側欄 ─────────────────────────────────────────────── */
+
+function renderDayList() {
+  const date = state.selected;
+  const h = state.holidays[date];
+  const off = !isWorkdayOn(date, state.holidays);
+  const people = visibleOn(date);
+
+  let inner;
+  if (off) {
+    const why = h ? esc(h.name) : '週末';
+    inner = `<div class="empty">${why} · 不排班</div>`;
+  } else if (!people.length) {
+    inner = '<div class="empty">這天沒有人 WFH（或已被篩選隱藏）</div>';
+  } else {
+    inner = ['PM', 'RD'].map((g) => {
+      const items = people.filter((m) => m.group === g);
+      if (!items.length) return '';
+      return `<div class="day-group">
+        <div class="glabel">${g} · ${items.length} 人</div>
+        <div class="gitems">${items.map(chip).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  return `<div class="card">
+    <h3>${date}（${DOW[dowOf(date)]}）WFH 名單</h3>
+    <div class="day-list">${inner}</div>
+  </div>`;
+}
+
+function renderStats() {
+  const [y, m] = state.cursor.split('-').map(Number);
+  const counts = monthlyCounts(y, m, state.data, state.holidays);
+  const shown = state.data.members.filter(isVisible);
+  const max = Math.max(1, ...shown.map((mem) => counts[mem.id] || 0));
+
+  const rows = ['PM', 'RD'].map((g) => {
+    const items = shown.filter((mem) => mem.group === g);
+    if (!items.length) return '';
+    return `<div class="subhead">${g}</div>` + items.map((mem) => {
+      const n = counts[mem.id] || 0;
+      return `<div class="stat ${g}">
+        <span class="sname" title="${esc(mem.name)}">${esc(mem.name)}</span>
+        <span class="sval">${n} 天</span>
+        <span class="sbar"><i style="width:${(n / max) * 100}%"></i></span>
+      </div>`;
+    }).join('');
+  }).join('');
+
+  return `<div class="card">
+    <h3>${y} 年 ${m} 月 WFH 天數</h3>
+    ${rows || '<div class="empty">沒有符合篩選的成員</div>'}
+    <div class="hint">只計上班日；國定假日與週末不計。</div>
+  </div>`;
+}
+
+function renderFilters() {
+  const f = state.filters;
+  const groups = ['PM', 'RD'].map((g) =>
+    `<button class="tog ${f.groups.has(g) ? 'on' : ''}" data-act="fgroup" data-group="${g}">${g}</button>`,
+  ).join('');
+
+  const people = state.data.members.map((m) => {
+    const on = !f.memberIds || f.memberIds.has(m.id);
+    return `<button class="tog ${on ? 'on' : ''}" data-act="fmember" data-id="${m.id}">${esc(m.name)}</button>`;
+  }).join('');
+
+  return `<div class="card">
+    <h3>篩選</h3>
+    <div class="chiprow">${groups}</div>
+    <div class="subhead">人員</div>
+    <div class="chiprow">${people}</div>
+    <div class="chiprow" style="margin-top:8px">
+      <button class="btn" data-act="fall">全選</button>
+      <button class="btn" data-act="fnone">全不選</button>
+    </div>
+    <div class="hint">只看某人：先「全不選」再點他。</div>
+  </div>`;
+}
+
+function dayLabelBtn(date) {
+  return `<button data-act="pick" data-date="${date}">${shortLabel(date)}</button>`;
+}
+
+function renderEditor() {
+  const date = state.selected;
+  const off = !isWorkdayOn(date, state.holidays);
+  if (off) {
+    const h = state.holidays[date];
+    return `<div class="card">
+      <h3>編輯 ${date}</h3>
+      <div class="empty">${h ? esc(h.name) : '週末'} 不排班，無法編輯。</div>
+    </div>`;
+  }
+
+  const entry = state.data.assignments[date] || { add: [], remove: [] };
+  const onDuty = new Set(wfhOn(date, state.data, state.holidays).map((m) => m.id));
+
+  const rows = ['PM', 'RD'].map((g) => {
+    const items = state.data.members.filter((m) => m.group === g);
+    if (!items.length) return '';
+    return `<div class="subhead">${g}</div>` + items.map((m) => {
+      const checked = onDuty.has(m.id);
+      const byRule = m.day === dowOf(date);
+      const inactive = !isActiveOn(m, date);
+
+      // 已在本週其他日排過 → 預先 disable 並說明，讓主管在點下去之前就看得出來
+      const taken = wfhDaysInWeek(m.id, date, state.data, state.holidays).filter((d) => d !== date);
+      const blocked = !checked && (taken.length > 0 || inactive);
+
+      let why = '';
+      if (inactive) {
+        why = `<span class="why">${m.startDate && date < m.startDate ? '尚未到職' : '已離職'}</span>`;
+      } else if (taken.length) {
+        why = `<span class="why">本週已排 ${dayLabelBtn(taken[0])}</span>`;
+      }
+
+      const tag = checked ? (byRule && !(entry.add || []).includes(m.id) ? '固定' : '指派') : '';
+
+      return `<div class="mrow ${blocked ? 'disabled' : ''}">
+        <label>
+          <input type="checkbox" data-act="toggle" data-id="${m.id}"
+                 ${checked ? 'checked' : ''} ${blocked ? 'disabled' : ''}>
+          <span class="mname" title="${esc(m.name)}">${esc(m.name)}</span>
+        </label>
+        ${tag ? `<span class="tag">${tag}</span>` : ''}
+        ${why}
+      </div>`;
+    }).join('');
+  }).join('');
+
+  const msg = state.panelMsg
+    ? `<div class="msg ${state.panelMsg.kind}">${state.panelMsg.text}</div>` : '';
+
+  return `<div class="card">
+    <h3>編輯 ${date}（${DOW[dowOf(date)]}）</h3>
+    ${rows}
+    ${msg}
+    <div class="chiprow" style="margin-top:10px; align-items:center">
+      <span style="font-size:12px;color:var(--muted)">重複套用到接下來</span>
+      <input type="number" id="rep-weeks" value="4" min="1" max="26" style="width:4em">
+      <span style="font-size:12px;color:var(--muted)">週的同一天</span>
+      <button class="btn" data-act="repeat">套用</button>
+    </div>
+    <div class="hint">編輯面板顯示全部成員，不受篩選影響。</div>
+  </div>`;
+}
+
+function renderMgmt() {
+  const rows = state.data.members.map((m, i) => {
+    const radios = [1, 2, 3, 4, 5].map((d) =>
+      `<label><input type="radio" name="day-${m.id}" data-act="setday" data-id="${m.id}"
+        data-day="${d}" ${m.day === d ? 'checked' : ''}>${DOW[d]}</label>`).join('')
+      + `<label><input type="radio" name="day-${m.id}" data-act="setday" data-id="${m.id}"
+        data-day="" ${m.day == null ? 'checked' : ''}>無</label>`;
+
+    return `<div class="mgmt-row">
+      <div class="top">
+        <span class="mname">${esc(m.name)}</span>
+        <select data-act="setgroup" data-id="${m.id}">
+          <option value="PM" ${m.group === 'PM' ? 'selected' : ''}>PM</option>
+          <option value="RD" ${m.group === 'RD' ? 'selected' : ''}>RD</option>
+        </select>
+        <button class="btn" data-act="del" data-id="${m.id}" title="刪除 ${esc(m.name)}">刪除</button>
+      </div>
+      <div class="radios" style="margin-top:5px">
+        <span style="font-size:11px;color:var(--faint);align-self:center">固定日</span>${radios}
+      </div>
+      <div class="fields" style="margin-top:5px">
+        <label>到職日（可空白）
+          <input type="date" data-act="setstart" data-id="${m.id}" value="${m.startDate || ''}">
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <details class="mgmt">
+      <summary>成員管理（${state.data.members.length} 人）</summary>
+      <div style="margin-top:10px">
+        <div class="fields">
+          <label>新增成員
+            <input type="text" id="new-name" placeholder="姓名" >
+          </label>
+          <div class="chiprow">
+            <select id="new-group">
+              <option value="RD">RD</option>
+              <option value="PM">PM</option>
+            </select>
+            <button class="btn" data-act="add">新增</button>
+          </div>
+        </div>
+        <div style="margin-top:10px">${rows}</div>
+        <div class="hint">固定日只能選一天 —— 這是「一人一週一天」在資料層的保證。</div>
+      </div>
+    </details>
+  </div>`;
+}
+
+function renderExportSlot() {
+  if (!state.dirty) return '';
+  return `<button class="btn on" data-act="download">下載 schedule.json</button>
+          <button class="btn" data-act="copy">複製 JSON</button>`;
+}
+
+function renderBanners() {
+  const out = [];
+
+  if (state.draftPrompt) {
+    const d = state.draftPrompt;
+    const stale = d.base !== state.baseUpdatedAt;
+    out.push(`<div class="banner warn">
+      <div class="bbody">
+        <strong>發現本機未匯出的變更</strong>（存於 ${esc(String(d.savedAt).slice(0, 16).replace('T', ' '))}）
+        ${stale ? `<br>⚠ 這份草稿基於較舊的 repo 資料（${esc(d.base || '未知')} → 現在是 ${esc(state.baseUpdatedAt || '未知')}），沿用可能覆蓋別人的更新。` : ''}
+      </div>
+      <span>
+        <button class="btn" data-act="draft-use">沿用</button>
+        <button class="btn" data-act="draft-drop">丟棄</button>
+      </span>
+    </div>`);
+  }
+
+  if (state.dirty) {
+    out.push(`<div class="banner warn">
+      <div class="bbody">
+        <strong>有未匯出的變更</strong> —— 只存在這台瀏覽器，其他人看不到。
+        請按「複製 JSON」後貼回
+        <a href="${REPO_EDIT_URL}" target="_blank" rel="noopener"><code>data/schedule.json</code></a>
+        並 commit。
+      </div>
+    </div>`);
+  }
+
+  const conflicts = findConflicts(state.data, state.holidays);
+  if (conflicts.length) {
+    out.push(`<div class="banner err">
+      <div class="bbody">
+        <strong>有 ${conflicts.length} 筆「一人一週一天」衝突</strong>
+        —— 不會自動修改，請自行決定保留哪一天。
+        <ul>${conflicts.map((c) =>
+          `<li>${esc(c.name)}：${c.weekKey} 那週排了 ${c.dates.length} 天（${c.dates.map((d) =>
+            dayLabelBtn(d)).join('、')}）</li>`).join('')}</ul>
+      </div>
+    </div>`);
+  }
+
+  return out.join('');
+}
+
+/* ── 主渲染 ───────────────────────────────────────────── */
+
+function render() {
+  $('#topsub').textContent =
+    `${state.data.members.length} 人 · 資料 ${state.data.updatedAt || '—'}`
+    + (state.dirty ? ' · 已修改' : '');
+  $('#export-slot').innerHTML = renderExportSlot();
+  $('#banners').innerHTML = renderBanners();
+  $('#toolbar').innerHTML = renderToolbar();
+  $('#calendar').innerHTML = state.view === 'month' ? renderMonth() : renderWeek();
+  $('#sidebar').innerHTML =
+    renderDayList() + renderEditor() + renderStats() + renderFilters() + renderMgmt();
+}
+
+/* ── 編輯動作 ─────────────────────────────────────────── */
+
+function entryFor(date) {
+  if (!state.data.assignments[date]) state.data.assignments[date] = { add: [], remove: [] };
+  const e = state.data.assignments[date];
+  e.add ||= [];
+  e.remove ||= [];
+  return e;
+}
+
+const pull = (arr, v) => { const i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); };
+
+function toggleMember(id, date) {
+  const m = indexById(state.data.members)[id];
+  const e = entryFor(date);
+  const on = wfhOn(date, state.data, state.holidays).some((x) => x.id === id);
+  const byRule = m.day === dowOf(date);
+
+  if (on) {
+    // 取消：規則來的要寫 remove，指派來的直接從 add 移除
+    pull(e.add, id);
+    if (byRule) { if (!e.remove.includes(id)) e.remove.push(id); }
+    state.panelMsg = null;
+  } else {
+    const r = canAssign(id, date, state.data, state.holidays);
+    if (!r.ok) {
+      // 正常情況下 checkbox 已 disabled，這是最後一道防線
+      state.panelMsg = r.reason === 'week-taken'
+        ? { kind: 'err', text: `${esc(m.name)} 本週已排 ${shortLabel(r.conflictDates[0])}，請先取消後再排。` }
+        : { kind: 'err', text: `${esc(m.name)} 無法排在這一天（${r.reason === 'holiday' ? '非上班日' : '不在職'}）。` };
+      render();
+      return;
+    }
+    pull(e.remove, id);
+    if (byRule) { /* 規則本來就有，移除 remove 即可 */ }
+    else if (!e.add.includes(id)) e.add.push(id);
+    state.panelMsg = null;
+  }
+  markDirty();
+}
+
+function repeatApply(weeks) {
+  const src = state.data.assignments[state.selected];
+  const hasSrc = src && ((src.add || []).length || (src.remove || []).length);
+  if (!hasSrc) {
+    state.panelMsg = { kind: 'warn', text: '這一天沒有可套用的指派內容。' };
+    render();
+    return;
+  }
+
+  const applied = [], skipped = [], blocked = [];
+
+  for (let i = 1; i <= weeks; i++) {
+    const target = addDays(state.selected, i * 7);
+
+    if (!isWorkdayOn(target, state.holidays)) {
+      const h = state.holidays[target];
+      skipped.push(`${shortLabel(target)}（${h ? h.name : '週末'}）`);
+      continue;
+    }
+
+    // 先在副本上套用，只檢查目標日那一週有沒有衝突
+    const candidate = clone(state.data);
+    candidate.assignments[target] = { add: [...(src.add || [])], remove: [...(src.remove || [])] };
+    const conflicts = conflictsForWeek(target, candidate, state.holidays);
+
+    if (conflicts.length) {
+      blocked.push(`${shortLabel(target)} 未套用：`
+        + conflicts.map((c) => `${c.name} 該週已排 ${shortLabel(
+            c.dates.find((d) => d !== target) || c.dates[0])}`).join('、'));
+      continue;
+    }
+
+    state.data.assignments[target] = { add: [...(src.add || [])], remove: [...(src.remove || [])] };
+    applied.push(shortLabel(target));
+  }
+
+  // 被擋下的必須明確列出。靜默跳過會讓主管以為排好了。
+  const lines = [];
+  lines.push(applied.length ? `已套用 ${applied.length} 週：${applied.join('、')}` : '沒有任何一週被套用。');
+  if (skipped.length) lines.push(`因假日跳過：${skipped.join('、')}`);
+  if (blocked.length) lines.push(...blocked);
+
+  state.panelMsg = {
+    kind: blocked.length ? 'warn' : (applied.length ? 'info' : 'warn'),
+    text: esc(lines.join('\n')),
+  };
+  markDirty();
+}
+
+function buildExport() {
+  const out = {
+    version: state.data.version ?? 1,
+    updatedAt: todayStr(),
+    members: state.data.members,
+    assignments: {},
+  };
+  for (const date of Object.keys(state.data.assignments).sort()) {
+    const e = state.data.assignments[date];
+    const add = (e.add || []).slice();
+    const remove = (e.remove || []).slice();
+    if (!add.length && !remove.length) continue;   // 清掉空條目，讓 git diff 乾淨
+    out.assignments[date] = { add, remove };
+  }
+  return JSON.stringify(out, null, 2) + '\n';
+}
+
+/* ── 事件（委派）─────────────────────────────────────── */
+
+document.addEventListener('click', async (ev) => {
+  const el = ev.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+
+  // checkbox / radio / select 由 change 處理
+  if (['toggle', 'setday', 'setgroup', 'setstart'].includes(act)) return;
+
+  switch (act) {
+    case 'pick':
+      state.selected = el.dataset.date;
+      state.cursor = el.dataset.date;
+      state.panelMsg = null;
+      render();
+      break;
+
+    case 'prev':
+    case 'next': {
+      const dir = act === 'next' ? 1 : -1;
+      if (state.view === 'week') state.cursor = addDays(state.cursor, dir * 7);
+      else {
+        const [y, m] = state.cursor.split('-').map(Number);
+        const nm = m + dir;
+        const ny = y + (nm === 0 ? -1 : nm === 13 ? 1 : 0);
+        const mm = nm === 0 ? 12 : nm === 13 ? 1 : nm;
+        state.cursor = `${ny}-${pad(mm)}-01`;
+      }
+      render();
+      break;
+    }
+
+    case 'today':
+      state.cursor = todayStr();
+      state.selected = todayStr();
+      render();
+      break;
+
+    case 'view':
+      state.view = el.dataset.view;
+      render();
+      break;
+
+    case 'fgroup': {
+      const g = el.dataset.group;
+      const s = state.filters.groups;
+      if (s.has(g)) { if (s.size > 1) s.delete(g); } else s.add(g);
+      render();
+      break;
+    }
+
+    case 'fmember': {
+      const id = el.dataset.id;
+      const all = state.data.members.map((m) => m.id);
+      const set = state.filters.memberIds ? new Set(state.filters.memberIds) : new Set(all);
+      if (set.has(id)) set.delete(id); else set.add(id);
+      // 空集合是合法狀態：「全不選」後只點一人，是「只看某人」的操作路徑
+      state.filters.memberIds = set.size === all.length ? null : set;
+      render();
+      break;
+    }
+
+    case 'fall':
+      state.filters.groups = new Set(['PM', 'RD']);
+      state.filters.memberIds = null;
+      render();
+      break;
+
+    case 'fnone':
+      state.filters.memberIds = new Set();
+      render();
+      break;
+
+    case 'repeat': {
+      const n = Math.max(1, Math.min(26, Number($('#rep-weeks').value) || 4));
+      repeatApply(n);
+      break;
+    }
+
+    case 'add': {
+      const name = $('#new-name').value.trim();
+      if (!name) return;
+      const group = $('#new-group').value;
+      const base = `${group.toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'}`;
+      let id = base, i = 2;
+      const taken = new Set(state.data.members.map((m) => m.id));
+      while (taken.has(id)) id = `${base}-${i++}`;
+      state.data.members.push({ id, name, group, day: null });
+      $('#new-name').value = '';
+      markDirty();
+      break;
+    }
+
+    case 'del': {
+      const id = el.dataset.id;
+      const m = indexById(state.data.members)[id];
+      if (!confirm(`刪除 ${m.name}？同時會從所有日期的排班中移除。`)) return;
+      state.data.members = state.data.members.filter((x) => x.id !== id);
+      // 一併清掉孤兒參照
+      for (const e of Object.values(state.data.assignments)) {
+        if (e.add) pull(e.add, id);
+        if (e.remove) pull(e.remove, id);
+      }
+      if (state.filters.memberIds) state.filters.memberIds.delete(id);
+      markDirty();
+      break;
+    }
+
+    case 'download': {
+      const blob = new Blob([buildExport()], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'schedule.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      break;
+    }
+
+    case 'copy':
+      try {
+        await navigator.clipboard.writeText(buildExport());
+        el.textContent = '已複製 ✓';
+        setTimeout(() => { el.textContent = '複製 JSON'; }, 1800);
+      } catch {
+        alert('無法存取剪貼簿，請改用「下載 schedule.json」。');
+      }
+      break;
+
+    case 'draft-use':
+      state.data = state.draftPrompt.data;
+      state.draftPrompt = null;
+      state.dirty = true;
+      render();
+      break;
+
+    case 'draft-drop':
+      state.draftPrompt = null;
+      clearDraft();
+      render();
+      break;
+  }
+});
+
+document.addEventListener('change', (ev) => {
+  const el = ev.target.closest('[data-act]');
+  if (!el) return;
+
+  switch (el.dataset.act) {
+    case 'toggle':
+      toggleMember(el.dataset.id, state.selected);
+      break;
+
+    case 'setday': {
+      const m = indexById(state.data.members)[el.dataset.id];
+      m.day = el.dataset.day ? Number(el.dataset.day) : null;
+      markDirty();   // 改固定日可能與既有指派撞週，render 會重跑全域衝突掃描
+      break;
+    }
+
+    case 'setgroup':
+      indexById(state.data.members)[el.dataset.id].group = el.value;
+      markDirty();
+      break;
+
+    case 'setstart': {
+      const m = indexById(state.data.members)[el.dataset.id];
+      if (el.value && isValidDate(el.value)) m.startDate = el.value;
+      else delete m.startDate;
+      markDirty();
+      break;
+    }
+  }
+});
+
+/* ── 啟動 ─────────────────────────────────────────────── */
+
+(async function init() {
+  try {
+    const [schedule, holidays] = await Promise.all([
+      loadJson('data/schedule.json'),
+      loadJson('data/holidays.json'),
+    ]);
+    state.data = schedule;
+    state.holidays = holidays;
+    state.baseUpdatedAt = schedule.updatedAt || null;
+
+    // 確保結構完整，後續程式碼就不必到處防禦
+    state.data.members ||= [];
+    state.data.assignments ||= {};
+
+    const draft = readDraft();
+    if (draft && JSON.stringify(draft.data) !== JSON.stringify(schedule)) {
+      state.draftPrompt = draft;
+    } else if (draft) {
+      clearDraft();   // 草稿與 repo 已一致，沒有保留價值
+    }
+
+    render();
+  } catch (err) {
+    document.querySelector('.layout').innerHTML = `<div class="card">
+      <h3>資料載入失敗</h3>
+      <p>${esc(err.message)}</p>
+      <p class="hint">這個頁面用 <code>fetch</code> 讀取 <code>data/*.json</code>，
+      直接以 <code>file://</code> 開啟會被瀏覽器的 CORS 規則擋下。
+      請在專案目錄執行 <code>npx serve .</code> 後從 http://localhost 開啟。</p>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
