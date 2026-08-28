@@ -6,6 +6,17 @@
  *
  * 「一人一週一天」是這個專案唯一的硬約束，而它最容易壞在三個地方：
  * 跨月的週、國定假日、以及日期的 UTC 偏移。這裡把它們全部釘住。
+ *
+ * ⚠ 這支測試會讀真的 data/schedule.json，而且有三處把現況寫成 golden value：
+ *     - describe('初始資料的每日名單')      每天的完整名單
+ *     - describe('一人一週一天：初始資料零衝突')  每人每週天數的核對表
+ *     - describe('月度統計')                2026-09 每人天數
+ *   所以「只改資料、沒改邏輯」也會讓這支測試紅掉，而且 validate-data.js
+ *   不會抓到（它只檢查結構與衝突，不比對預期名單）。
+ *   改完 data/schedule.json 一律跑 `npm run check`，不要只跑 npm run validate。
+ *   紅掉時先確認 findConflicts 那項有沒有過：
+ *     過了 → 只是預期值過期，照新排班更新上面三處。
+ *     沒過 → 真的排出衝突了，要改的是資料不是測試。
  */
 
 import { test, describe } from 'node:test';

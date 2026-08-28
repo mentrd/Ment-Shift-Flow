@@ -8,6 +8,7 @@
     "dev": "npx --yes serve .",
     "test": "node --test scripts/test-rules.js",
     "validate": "node scripts/validate-data.js",
+    "check": "npm test && npm run validate",
     "holidays": "node scripts/fetch-holidays.js"
   }
 }
