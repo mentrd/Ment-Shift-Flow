@@ -1,9 +1,9 @@
-# Ment Shift Flow — WFH 排班表
+# WFH 行事曆
 
 [![Deploy to Pages](https://github.com/mentrd/Ment-Shift-Flow/actions/workflows/deploy.yml/badge.svg)](https://github.com/mentrd/Ment-Shift-Flow/actions/workflows/deploy.yml)
 [![Update Taiwan holidays](https://github.com/mentrd/Ment-Shift-Flow/actions/workflows/update-holidays.yml/badge.svg)](https://github.com/mentrd/Ment-Shift-Flow/actions/workflows/update-holidays.yml)
 
-團隊 WFH 排班的月曆檢視，部署在 GitHub Pages 上，一個網址全團隊共用。
+團隊 WFH 的行事曆檢視，部署在 GitHub Pages 上，一個網址全團隊共用。
 
 **網址**：https://mentrd.github.io/Ment-Shift-Flow/
 
