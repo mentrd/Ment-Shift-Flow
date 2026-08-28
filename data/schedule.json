@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-28",
+  "updatedAt": "2026-08-29",
   "members": [
     { "id": "pm-max",      "name": "Max",      "group": "PM", "day": 1, "startDate": "2026-09-01" },
     { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
@@ -23,6 +23,7 @@
     "2026-09-07": { "add": ["rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] },
     "2026-09-11": { "add": ["rd-sherry", "rd-leon", "rd-alan", "rd-eudora"], "remove": [] },
     "2026-09-14": { "add": ["rd-alan", "rd-eudora", "rd-downey", "rd-leon"], "remove": [] },
+    "2026-09-18": { "add": ["rd-sherry", "rd-ruru", "rd-tema", "rd-eric"], "remove": [] },
     "2026-09-21": { "add": ["rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] }
   }
 }
