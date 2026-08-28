@@ -133,10 +133,11 @@ describe('初始資料的每日名單', () => {
     });
   }
 
-  test('Max 的 startDate 生效：8/31 沒有他', () => {
-    // 對應計畫驗證步驟 6
-    assert.deepEqual(namesOn('2026-08-31'), ['Michelle', 'Chloe']);
-    assert.deepEqual(namesOn('2026-09-07').slice(0, 3), ['Max', 'Michelle', 'Chloe']);
+  test('startDate 生效：8 月全員未到職，一個人都沒有', () => {
+    // 全體成員的 startDate 都是 2026-09-01
+    assert.deepEqual(namesOn('2026-08-31'), [], '8/31（一）');
+    assert.deepEqual(namesOn('2026-08-28'), [], '8/28（五）');
+    assert.deepEqual(namesOn('2026-09-07').slice(0, 3), ['Max', 'Michelle', 'Chloe'], '9/7 起才有人');
   });
 });
 
@@ -302,10 +303,16 @@ describe('月度統計', () => {
     assert.equal(byName.ERIC, 2);
   });
 
-  test('2026-08 只有 Michelle / Chloe（Max 未到職）', () => {
+  test('2026-08 全員 0 天（都還沒到職）', () => {
     const counts = monthlyCounts(2026, 8, data, holidays);
-    assert.equal(counts['pm-max'], undefined);
-    assert.equal(counts['pm-michelle'], 5, '8 月有 5 個週一');
-    assert.equal(counts['pm-louisa'], 4, '8 月有 4 個週五');
+    assert.deepEqual(counts, {}, '8 月不該有任何人計入');
+  });
+
+  test('2026-09 起 startDate 不再影響（9/1 之後照規則展開）', () => {
+    const counts = monthlyCounts(2026, 10, data, holidays);
+    // 10 月有 4 個週一（5、12、19）與 10/26 光復節補假不計 → 3 天
+    assert.equal(counts['pm-michelle'], 3, '10/05、10/12、10/19（10/26 補假不計）');
+    // 10 月的週五：2、9(補假)、16、23、30 → 9 日補假不計 → 4 天
+    assert.equal(counts['pm-louisa'], 4, '10/02、10/16、10/23、10/30（10/09 補假不計）');
   });
 });

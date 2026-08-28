@@ -7,11 +7,13 @@
 
 **網址**：https://mentrd.github.io/Ment-Shift-Flow/
 
+**這是純檢視工具** —— 網頁不寫入任何資料，排班與成員一律編輯 [`data/schedule.json`](data/schedule.json)，push 後自動部署。
+
 - 月／週檢視，當天 WFH 人員直接顯示在格子裡
 - PM / RD 分組，可依組別或個別人員篩選
-- 側欄顯示所選日期的完整名單與當月每人 WFH 天數
+- 側欄顯示所選日期的完整名單、當月每人 WFH 天數、成員名單
 - 台灣國定假日自動抓取、標紅、不排班
-- 硬約束：**一個人一週只能有一天 WFH**，系統會擋下衝突
+- 硬約束：**一個人一週只能有一天 WFH**，部署前自動檢查，有衝突就擋下部署
 
 ---
 
@@ -26,11 +28,12 @@
 
 ### 一個人一週只能有一天
 
-這是唯一的硬約束，在三個地方擋：
+這是唯一的硬約束，在兩個地方擋：
 
-1. **資料層** — `day` 是單一數字而非陣列，成員管理用單選鈕，固定日不可能超過一天。
-2. **編輯時** — 已在本週排過的人，勾選框會**預先變灰**並顯示「本週已排 09/07 (一)」，點該日期可直接跳過去取消。
-3. **部署前** — `scripts/validate-data.js` 會掃過所有週，有衝突就讓 GitHub Actions 失敗，擋下部署。
+1. **資料層** — `day` 是單一數字而非陣列，所以固定日不可能超過一天。
+2. **部署前** — `scripts/validate-data.js` 掃過所有週，有衝突就讓 GitHub Actions 失敗、擋下部署，訊息會指出人名、週次與衝突的兩個日期。
+
+改完 JSON 記得先跑 `npm run validate`，比 push 後才發現快得多。網頁本身若讀到有衝突的資料，頂部會顯示紅色橫幅列出所有衝突（不會自動修改，由你決定留哪一天）。
 
 「週」是**週一起算**。注意跨月的週：2026-09-30（三）與 2026-10-02（五）屬於同一週，兩天排同一個人算衝突。
 
@@ -42,20 +45,7 @@
 
 ## 怎麼改班表
 
-`data/schedule.json` 是唯一真實來源。兩種改法：
-
-### A. 在網頁上改（推薦）
-
-1. 打開網址，點日曆上的某一天
-2. 在側欄勾選／取消成員；要排連續幾週就用「重複套用到接下來 N 週的同一天」
-3. 改完按頂端的 **複製 JSON**
-4. 貼回 [`data/schedule.json`](https://github.com/mentrd/Ment-Shift-Flow/edit/main/data/schedule.json) 並 commit
-5. GitHub Actions 自動檢查 + 部署
-
-> ⚠️ **網頁上的修改不會自動同步給其他人。** 沒有貼回 repo 之前，別人看不到，換一台電腦也看不到。
-> 未匯出的變更會暫存在瀏覽器 localStorage 防手滑，下次打開會問你要沿用或丟棄 —— 那只是暫存，不是共享儲存。
-
-### B. 直接改 JSON
+`data/schedule.json` 是唯一真實來源，直接編輯它：
 
 ```jsonc
 {
@@ -63,7 +53,7 @@
     // PM：day 填 1-5（週一到週五），每人只能一天
     { "id": "pm-max", "name": "Max", "group": "PM", "day": 1, "startDate": "2026-09-01" },
     // RD：day 一律 null，靠下面的 assignments 逐日指派
-    { "id": "rd-sherry", "name": "SHERRY", "group": "RD", "day": null }
+    { "id": "rd-sherry", "name": "SHERRY", "group": "RD", "day": null, "startDate": "2026-09-01" }
   ],
   "assignments": {
     // add：該日額外 WFH（RD 指派、PM 臨時改期）
@@ -74,10 +64,12 @@
 }
 ```
 
-- `startDate` / `endDate` 可選，用來處理到職／離職。字串比較即可，不必轉日期。
-- 改完務必跑 `npm run validate`，不然 CI 會擋下部署。
+- `id` 只要在檔案內唯一即可，慣例是 `pm-` / `rd-` 加小寫名字。
+- `startDate` / `endDate` 可選，用來處理到職／離職；字串比較即可，不必轉日期。目前全體是 `2026-09-01`，所以 8 月的日曆是空的（網頁會自動從 9 月開始顯示，並在側欄說明原因）。
+- 排 RD 時記得同一人**同一週只能出現一次**，週一起算。跨月的週要特別注意：`2026-09-30`（三）與 `2026-10-02`（五）屬於同一週。
+- 改完跑 `npm run validate` 再 push。
 
----
+改完 push 到 `main`，GitHub Actions 會跑測試 + 檢查資料，通過就自動部署。
 
 ## 國定假日
 
@@ -116,8 +108,8 @@ npm run holidays   # 重新抓取國定假日
 ### 檔案結構
 
 ```
-index.html                 全部 UI + CSS + JS
-data/schedule.json         成員 + 逐日指派（可由網頁匯出）
+index.html                 全部 UI + CSS + JS（純檢視，不寫入資料）
+data/schedule.json         成員 + 逐日指派（唯一真實來源，手動編輯）
 data/holidays.json         國定假日（程式產生，勿手改）
 scripts/rules.js           排班規則的唯一真實來源
 scripts/test-rules.js      規則的回歸測試
@@ -126,7 +118,7 @@ scripts/fetch-holidays.js  抓取政府行事曆
 ```
 
 `scripts/rules.js` 同時被 `index.html`（`<script type="module">` import）和
-`scripts/validate-data.js`（node import）使用。**規則只有這一份**，不會出現前端擋得住、CI 放過的情形。
+`scripts/validate-data.js`（node import）使用。**規則只有這一份**，網頁顯示的結果和 CI 檢查的結果一定一致。
 
 ---
 
