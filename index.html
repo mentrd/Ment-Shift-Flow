@@ -249,6 +249,17 @@
   .pill.RD { background: var(--rd-bg); color: var(--rd-fg); border-color: var(--rd-bd); }
   .subhead { margin: 15px 0 7px; font-size: 12px; font-weight: 600;
              letter-spacing: .04em; color: var(--fg-3); }
+
+  /* 側欄的名字可以點 —— 點了就是「只看這個人」。
+     週檢視的膠囊在 button.wrow 裡面，不能再是 button，所以那邊維持 span。 */
+  button.pill:hover { border-color: var(--accent); }
+  .pill.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.srow { width: calc(100% + 12px); margin-left: -6px; padding: 0 6px;
+                border-radius: 7px; text-align: left; }
+  button.srow:hover { background: var(--surface-2); }
+  button.srow.sel { background: var(--accent-soft); }
+  button.srow:focus-visible, button.pill:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px; }
   .subhead.first { margin-top: 0; }
 
   /* 舊版把「成員名單」與「統計」拆成兩張卡，同一批名字出現兩次；這裡合併成一張表 */
@@ -431,6 +442,9 @@ function isVisible(m) {
   if (state.filters.memberIds !== null && !state.filters.memberIds.has(m.id)) return false;
   return true;
 }
+
+/** 這個人現在是否被點選（人員篩選中）—— 側欄用來畫選取狀態 */
+const picked = (id) => Boolean(state.filters.memberIds && state.filters.memberIds.has(id));
 
 /** 該日 WFH 且通過篩選的人 —— 日曆、側欄、統計都用這個，三處數字才會一致 */
 function visibleOn(date) {
@@ -681,8 +695,11 @@ function renderDayPanel() {
       if (!items.length) return '';
       return `<div class="grp">
         <div class="grp-label"><i class="dot dot-${g}"></i>${g} · ${items.length} 人</div>
-        <div class="pills">${items.map((x) =>
-          `<span class="pill ${g}">${esc(x.name)}</span>`).join('')}</div>
+        <div class="pills">${items.map((x) => {
+          const on = picked(x.id);
+          return `<button class="pill ${g}${on ? ' sel' : ''}" data-act="fmember" data-id="${x.id}"
+            aria-pressed="${on}" title="${on ? '取消只看' : '只看'} ${esc(x.name)}">${esc(x.name)}</button>`;
+        }).join('')}</div>
       </div>`;
     }).join('');
   }
@@ -725,12 +742,15 @@ function renderStatsPanel() {
         tag = `${Number(mem.endDate.slice(5, 7))}/${Number(mem.endDate.slice(8))} 止`;
         title += ` · ${mem.endDate} 止`;
       }
-      return `<div class="srow ${inactive ? 'inactive' : ''}" title="${esc(title)}">
+      const on = picked(mem.id);
+      return `<button class="srow ${inactive ? 'inactive' : ''}${on ? ' sel' : ''}"
+        data-act="fmember" data-id="${mem.id}" aria-pressed="${on}"
+        title="${esc(title)}　（點一下${on ? '取消' : ''}只看這個人）">
         <span class="sname"><i class="dot dot-${g}"></i><span>${esc(mem.name)}</span></span>
         <span class="sday">${esc(tag)}</span>
         <span class="sval">${n} 天</span>
         <span class="sbar"><i style="width:${Math.round((n / max) * 100)}%;background:var(--${g.toLowerCase()})"></i></span>
-      </div>`;
+      </button>`;
     }).join('');
     return `<div class="subhead${i === 0 ? ' first' : ''}">${g} · ${items.length} 人</div>${rows}`;
   }).join('');
@@ -853,7 +873,7 @@ document.addEventListener('click', (ev) => {
       if (set.has(id)) set.delete(id); else set.add(id);
       // 選到剩零人就回到「沒篩選」，不是「誰都不顯示」—— 空白的日曆沒有任何用處
       state.filters.memberIds = set.size ? set : null;
-      state.ui.memberPop = true;   // 連續點選時浮層要留著
+      state.ui.memberPop = Boolean(el.closest('.pop'));  // 從浮層點的才把浮層留著
       render();
       break;
     }
