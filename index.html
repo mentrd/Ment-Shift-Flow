@@ -376,7 +376,7 @@ const state = {
   view: 'month',
   cursor: todayStr(),        // 檢視中的月份／週（用該期間內任一天表示）
   selected: todayStr(),      // 側欄名單的對象
-  filters: { groups: new Set(['PM', 'RD']), memberIds: null }, // null=沒篩選（全部顯示）
+  filters: { groups: null, memberIds: null },   // 兩者都是 null=沒篩選（全部顯示）
   ui: { sidebar: true, memberPop: false },
   data: null,
   holidays: null,
@@ -426,7 +426,7 @@ async function loadJson(path) {
 /* ── 篩選 ─────────────────────────────────────────────── */
 
 function isVisible(m) {
-  if (!state.filters.groups.has(m.group)) return false;
+  if (state.filters.groups !== null && !state.filters.groups.has(m.group)) return false;
   // memberIds === null 代表沒有人員篩選 → 全部顯示；有值就只顯示選中的人
   if (state.filters.memberIds !== null && !state.filters.memberIds.has(m.id)) return false;
   return true;
@@ -587,9 +587,11 @@ function renderToolbar() {
   }
 
   const f = state.filters;
-  const groupTogs = ['PM', 'RD'].map((g) =>
-    `<button class="tog ${f.groups.has(g) ? 'on' : ''}" data-act="fgroup" data-group="${g}"
-       aria-pressed="${f.groups.has(g)}"><i class="dot dot-${g}"></i>${g}</button>`).join('');
+  const groupTogs = ['PM', 'RD'].map((g) => {
+    const on = Boolean(f.groups && f.groups.has(g));
+    return `<button class="tog ${on ? 'on' : ''}" data-act="fgroup" data-group="${g}"
+       aria-pressed="${on}"><i class="dot dot-${g}"></i>${g}</button>`;
+  }).join('');
 
   // 一開始一個都不選 —— 點亮誰就只看誰，沒點就是沒篩選
   const members = state.data.members.map((m) => {
@@ -630,7 +632,7 @@ function renderToolbar() {
         <button class="segbtn ${state.view === 'week' ? 'on' : ''}" data-act="view" data-view="week">週</button>
       </span>
       <span class="vrule"></span>
-      <span class="tb-label">顯示</span>
+      <span class="tb-label">篩選</span>
       ${groupTogs}
       <span class="pop-wrap">
         <button class="tog ${f.memberIds ? 'on' : ''}" data-act="fpop"
@@ -837,8 +839,10 @@ document.addEventListener('click', (ev) => {
 
     case 'fgroup': {
       const g = el.dataset.group;
-      const s = state.filters.groups;
-      if (s.has(g)) { if (s.size > 1) s.delete(g); } else s.add(g);
+      const set = new Set(state.filters.groups ?? []);
+      if (set.has(g)) set.delete(g); else set.add(g);
+      // 與人員篩選同一條規則：選到剩零個就回到「沒篩選」
+      state.filters.groups = set.size ? set : null;
       render();
       break;
     }
