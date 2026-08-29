@@ -436,8 +436,13 @@ async function loadJson(path) {
 
 /* ── 篩選 ─────────────────────────────────────────────── */
 
+/** 只看群組那一層。月天數面板用它 —— 它是名冊兼選人器，不能被人員篩選收掉。 */
+function inGroup(m) {
+  return state.filters.groups === null || state.filters.groups.has(m.group);
+}
+
 function isVisible(m) {
-  if (state.filters.groups !== null && !state.filters.groups.has(m.group)) return false;
+  if (!inGroup(m)) return false;
   // memberIds === null 代表沒有人員篩選 → 全部顯示；有值就只顯示選中的人
   if (state.filters.memberIds !== null && !state.filters.memberIds.has(m.id)) return false;
   return true;
@@ -719,7 +724,9 @@ const dayTag = (m) => (m.day == null ? '逐日' : `週${DOW[m.day]}`);
 function renderStatsPanel() {
   const [y, m] = state.cursor.split('-').map(Number);
   const counts = monthlyCounts(y, m, state.data, state.holidays);
-  const shown = state.data.members.filter(isVisible);
+  // 這裡刻意用 inGroup 而不是 isVisible：選了一個人之後其他人還要留在名單上，
+  // 才有辦法繼續複選。被選中的人用底色標出來，沒選的照常顯示。
+  const shown = state.data.members.filter(inGroup);
   const max = Math.max(1, ...shown.map((mem) => counts[mem.id] || 0));
   // 到職／離職一律拿「檢視中的月份」比對，不是拿今天。這張表列的是該月天數，
   // 用今天判斷會出現「整排灰掉、卻各自有 3 天」的矛盾。
@@ -758,9 +765,11 @@ function renderStatsPanel() {
   return `<section class="panel">
     <div class="p-head">
       <span class="p-title">${m} 月 WFH 天數</span>
-      <span class="p-meta">${shown.length}/${state.data.members.length} 人</span>
+      <span class="p-meta">${state.filters.memberIds
+        ? `已選 ${state.filters.memberIds.size}/${shown.length} 人`
+        : `${shown.length} 人`}</span>
     </div>
-    ${blocks || '<div class="empty">沒有符合篩選的成員</div>'}
+    ${blocks || '<div class="empty">這個群組沒有成員</div>'}
     <p class="hint">只計上班日；國定假日與週末不計。</p>
   </section>`;
 }
