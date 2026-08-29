@@ -305,7 +305,11 @@
     .wrow .wsum, .wrow .wnone:first-of-type { grid-column: 2; }
     .wrow .pills { grid-column: 1 / -1; }
     .legend { gap: 12px; }
-    .pop { right: auto; left: 0; width: min(268px, calc(100vw - 44px)); }
+    /* 窄畫面不要吊在「人員」按鈕下面 —— 按鈕會被 flex 換行推到不固定的位置，
+       往右展開就會撐破版面。改成掛在整條工具列上、左右對齊，寬度必定放得下。 */
+    .toolbar { position: relative; }
+    .pop-wrap { position: static; }
+    .pop { left: 0; right: 0; width: auto; }
   }
 </style>
 </head>
