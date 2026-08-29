@@ -40,7 +40,7 @@
     --shadow:0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.04);
     --pop-shadow:0 10px 30px rgba(16,24,40,.14), 0 2px 8px rgba(16,24,40,.08);
   }
-  [data-theme="dark"] {
+  :root[data-theme="dark"] {
     color-scheme: dark;
     --bg:#0d1116; --surface:#161b21; --surface-2:#1c222a; --surface-3:#252d36;
     --line:#28303a; --line-2:#3b4653;
@@ -330,7 +330,7 @@
   <h1>WFH 行事曆</h1>
   <span class="hdr-sub" id="topsub"></span>
   <div class="hdr-r">
-    <div class="seg" id="themeseg"></div>
+    <div id="themeToggle"></div>
   </div>
 </header>
 
@@ -418,12 +418,12 @@ prefersDark.addEventListener('change', (ev) => {
 });
 
 function renderThemeToggle() {
-  const t = currentTheme();
-  $('#themeseg').innerHTML = `
-    <button class="segbtn ${t === 'light' ? 'on' : ''}" data-act="theme" data-theme="light"
-            aria-pressed="${t === 'light'}">${ICON.sun(15)}淺色</button>
-    <button class="segbtn ${t === 'dark' ? 'on' : ''}" data-act="theme" data-theme="dark"
-            aria-pressed="${t === 'dark'}">${ICON.moon(15)}深色</button>`;
+  // 單顆圖示鈕：畫的是「按下去會變成什麼」。目前是什麼模式，看整頁就知道了。
+  const dark = currentTheme() === 'dark';
+  const label = `切換為${dark ? '淺色' : '深色'}`;
+  $('#themeToggle').innerHTML =
+    `<button class="ibtn" data-act="theme" data-mode="${dark ? 'light' : 'dark'}"
+       title="${label}" aria-label="${label}">${dark ? ICON.sun(17) : ICON.moon(17)}</button>`;
 }
 
 /* ── 資料存取 ─────────────────────────────────────────── */
@@ -820,7 +820,7 @@ document.addEventListener('click', (ev) => {
 
   switch (el.dataset.act) {
     case 'theme':
-      applyTheme(el.dataset.theme, true);
+      applyTheme(el.dataset.mode, true);
       break;
 
     case 'pick':
