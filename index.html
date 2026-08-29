@@ -376,7 +376,7 @@ const state = {
   view: 'month',
   cursor: todayStr(),        // 檢視中的月份／週（用該期間內任一天表示）
   selected: todayStr(),      // 側欄名單的對象
-  filters: { groups: new Set(['PM', 'RD']), memberIds: null }, // memberIds=null 代表不篩人員
+  filters: { groups: new Set(['PM', 'RD']), memberIds: null }, // null=沒篩選（全部顯示）
   ui: { sidebar: true, memberPop: false },
   data: null,
   holidays: null,
@@ -427,7 +427,7 @@ async function loadJson(path) {
 
 function isVisible(m) {
   if (!state.filters.groups.has(m.group)) return false;
-  // memberIds === null 代表不做人員層篩選；空集合代表「全不選」，要真的擋掉所有人
+  // memberIds === null 代表沒有人員篩選 → 全部顯示；有值就只顯示選中的人
   if (state.filters.memberIds !== null && !state.filters.memberIds.has(m.id)) return false;
   return true;
 }
@@ -587,17 +587,24 @@ function renderToolbar() {
   }
 
   const f = state.filters;
-  const total = state.data.members.length;
-  const picked = f.memberIds === null ? total : f.memberIds.size;
   const groupTogs = ['PM', 'RD'].map((g) =>
     `<button class="tog ${f.groups.has(g) ? 'on' : ''}" data-act="fgroup" data-group="${g}"
        aria-pressed="${f.groups.has(g)}"><i class="dot dot-${g}"></i>${g}</button>`).join('');
 
+  // 一開始一個都不選 —— 點亮誰就只看誰，沒點就是沒篩選
   const members = state.data.members.map((m) => {
-    const on = !f.memberIds || f.memberIds.has(m.id);
+    const on = Boolean(f.memberIds && f.memberIds.has(m.id));
     return `<button class="tog ${on ? 'on' : ''}" data-act="fmember" data-id="${m.id}"
               aria-pressed="${on}">${esc(m.name)}</button>`;
   }).join('');
+
+  // 按鈕文字直接說明現在的狀態，不用點開才知道
+  let popLabel = '人員・全部';
+  if (f.memberIds && f.memberIds.size) {
+    popLabel = f.memberIds.size === 1
+      ? `只看 ${esc(state.data.members.find((m) => f.memberIds.has(m.id)).name)}`
+      : `只看 ${f.memberIds.size} 人`;
+  }
 
   // 收合後把選定日的脈絡留在工具列，不要整個消失
   const sideBtn = state.ui.sidebar
@@ -626,14 +633,13 @@ function renderToolbar() {
       <span class="tb-label">顯示</span>
       ${groupTogs}
       <span class="pop-wrap">
-        <button class="tog ${picked < total ? 'on' : ''}" data-act="fpop"
-          aria-expanded="${state.ui.memberPop}">人員・${picked === total ? '全部' : ''}${picked} 人${ICON.down(14)}</button>
+        <button class="tog ${f.memberIds ? 'on' : ''}" data-act="fpop"
+          aria-expanded="${state.ui.memberPop}">${popLabel}${ICON.down(14)}</button>
         <span class="pop" id="memberpop" ${state.ui.memberPop ? '' : 'hidden'}>
           <span class="chiprow">${members}</span>
-          <span class="pop-foot">
-            <button class="btn" data-act="fall">全選</button>
-            <button class="btn" data-act="fnone">全不選</button>
-          </span>
+          ${f.memberIds ? `<span class="pop-foot">
+            <button class="btn" data-act="fclear">清除，顯示全部</button>
+          </span>` : ''}
         </span>
       </span>
       ${sideBtn}
@@ -733,8 +739,7 @@ function renderStatsPanel() {
       <span class="p-meta">${shown.length}/${state.data.members.length} 人</span>
     </div>
     ${blocks || '<div class="empty">沒有符合篩選的成員</div>'}
-    <p class="hint">只計上班日；國定假日與週末不計。要新增或修改成員、調整排班，
-      請編輯 <code>data/schedule.json</code>。</p>
+    <p class="hint">只計上班日；國定假日與週末不計。</p>
   </section>`;
 }
 
@@ -840,25 +845,17 @@ document.addEventListener('click', (ev) => {
 
     case 'fmember': {
       const id = el.dataset.id;
-      const all = state.data.members.map((m) => m.id);
-      const set = state.filters.memberIds ? new Set(state.filters.memberIds) : new Set(all);
+      const set = new Set(state.filters.memberIds ?? []);
       if (set.has(id)) set.delete(id); else set.add(id);
-      // 空集合是合法狀態：「全不選」後只點一人，是「只看某人」的操作路徑
-      state.filters.memberIds = set.size === all.length ? null : set;
+      // 選到剩零人就回到「沒篩選」，不是「誰都不顯示」—— 空白的日曆沒有任何用處
+      state.filters.memberIds = set.size ? set : null;
       state.ui.memberPop = true;   // 連續點選時浮層要留著
       render();
       break;
     }
 
-    case 'fall':
-      state.filters.groups = new Set(['PM', 'RD']);
+    case 'fclear':
       state.filters.memberIds = null;
-      state.ui.memberPop = true;
-      render();
-      break;
-
-    case 'fnone':
-      state.filters.memberIds = new Set();
       state.ui.memberPop = true;
       render();
       break;
