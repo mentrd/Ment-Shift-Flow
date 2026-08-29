@@ -131,8 +131,8 @@ describe('初始資料的每日名單', () => {
     '2026-09-04': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'LEON', 'ALAN', 'EUDORA'],
     '2026-09-07': ['Max', 'Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-11': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'LEON', 'ALAN', 'EUDORA'],
-    '2026-09-14': ['Max', 'Michelle', 'Chloe', 'LEON', 'ALAN', 'EUDORA', 'DOWNEY'],
-    '2026-09-18': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'RURU', 'TEMA', 'ERIC'],
+    '2026-09-14': ['Max', 'Michelle', 'Chloe', 'SHERRY', 'LEON', 'RURU', 'DOWNEY'],
+    '2026-09-18': ['Louisa', 'Kate', 'Johnny', 'ALAN', 'EUDORA', 'TEMA', 'ERIC'],
     '2026-09-21': ['Max', 'Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-25': [], // 中秋
     '2026-09-28': [], // 教師節
@@ -305,12 +305,12 @@ describe('月度統計', () => {
     assert.equal(byName.Kate, 3);
     assert.equal(byName.Johnny, 3);
     // RD —— 09/18 補上 SHERRY、RURU、TEMA、ERIC 之後，8 位都是 3 天
-    assert.equal(byName.SHERRY, 3, '09/04、09/11、09/18');
+    assert.equal(byName.SHERRY, 3, '09/04、09/11、09/14');
     assert.equal(byName.LEON, 3, '09/04、09/11、09/14');
-    assert.equal(byName.ALAN, 3);
-    assert.equal(byName.EUDORA, 3);
-    assert.equal(byName.RURU, 3, '09/07、09/18、09/21');
-    assert.equal(byName.TEMA, 3);
+    assert.equal(byName.ALAN, 3, '09/04、09/11、09/18');
+    assert.equal(byName.EUDORA, 3, '09/04、09/11、09/18');
+    assert.equal(byName.RURU, 3, '09/07、09/14、09/21');
+    assert.equal(byName.TEMA, 3, '09/07、09/18、09/21');
     assert.equal(byName.DOWNEY, 3, '09/07、09/14、09/21');
     assert.equal(byName.ERIC, 3, '09/07、09/18、09/21');
   });
