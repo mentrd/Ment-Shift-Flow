@@ -129,11 +129,11 @@ describe('初始資料的每日名單', () => {
   // 對應計畫驗證步驟 5
   const expected = {
     '2026-09-04': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'LEON', 'ALAN', 'EUDORA'],
-    '2026-09-07': ['Max', 'Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
+    '2026-09-07': ['Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-11': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'LEON', 'ALAN', 'EUDORA'],
-    '2026-09-14': ['Max', 'Michelle', 'Chloe', 'SHERRY', 'LEON', 'RURU', 'DOWNEY'],
+    '2026-09-14': ['Michelle', 'Chloe', 'SHERRY', 'LEON', 'RURU', 'DOWNEY'],
     '2026-09-18': ['Louisa', 'Kate', 'Johnny', 'ALAN', 'EUDORA', 'TEMA', 'ERIC'],
-    '2026-09-21': ['Max', 'Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
+    '2026-09-21': ['Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-25': [], // 中秋
     '2026-09-28': [], // 教師節
   };
@@ -148,7 +148,7 @@ describe('初始資料的每日名單', () => {
     // 全體成員的 startDate 都是 2026-09-01
     assert.deepEqual(namesOn('2026-08-31'), [], '8/31（一）');
     assert.deepEqual(namesOn('2026-08-28'), [], '8/28（五）');
-    assert.deepEqual(namesOn('2026-09-07').slice(0, 3), ['Max', 'Michelle', 'Chloe'], '9/7 起才有人');
+    assert.deepEqual(namesOn('2026-09-07').slice(0, 2), ['Michelle', 'Chloe'], '9/7 起才有人');
   });
 });
 
@@ -239,15 +239,22 @@ describe('一人一週一天：擋下衝突', () => {
   });
 
   test('未到職不能排班', () => {
-    const id = 'pm-max';
+    const id = 'pm-michelle';
     assert.equal(canAssign(id, '2026-08-31', data, holidays).reason, 'inactive');
+  });
+
+  test('離職後不能排班', () => {
+    // Max 的 endDate 是 2026-09-04，之後的週一都排不進去
+    assert.ok(canAssign('pm-max', '2026-09-04', data, holidays).ok, '最後在職日仍可排');
+    assert.equal(canAssign('pm-max', '2026-09-07', data, holidays).reason, 'inactive');
+    assert.deepEqual(wfhDaysInWeek('pm-max', '2026-09-07', data, holidays), [], '離職後那週 0 天');
   });
 });
 
 describe('固定日碰上國定假日，該週可以改排別天', () => {
   // 對應計畫驗證步驟 10。這是「檢查基於 wfhOn 實際結果而非名義規則」的價值所在。
   test('教師節（一）讓 PM A 組該週 0 天，可改排週二', () => {
-    for (const name of ['Max', 'Michelle', 'Chloe']) {
+    for (const name of ['Michelle', 'Chloe']) {
       const id = data.members.find((m) => m.name === name).id;
       assert.deepEqual(
         wfhDaysInWeek(id, '2026-09-28', data, holidays),
@@ -297,7 +304,7 @@ describe('月度統計', () => {
     );
 
     // PM A 組：09/07、09/14、09/21（09/28 教師節不計）
-    assert.equal(byName.Max, 3);
+    assert.equal(byName.Max, 0, 'endDate 2026-09-04，9 月的週一都在離職後');
     assert.equal(byName.Michelle, 3);
     assert.equal(byName.Chloe, 3);
     // PM B 組：09/04、09/11、09/18（09/25 中秋不計）

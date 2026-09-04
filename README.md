@@ -53,7 +53,7 @@
 {
   "members": [
     // PM：day 填 1-5（週一到週五），每人只能一天
-    { "id": "pm-max", "name": "Max", "group": "PM", "day": 1, "startDate": "2026-09-01" },
+    { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
     // RD：day 一律 null，靠下面的 assignments 逐日指派
     { "id": "rd-sherry", "name": "SHERRY", "group": "RD", "day": null, "startDate": "2026-09-01" }
   ],
@@ -61,13 +61,14 @@
     // add：該日額外 WFH（RD 指派、PM 臨時改期）
     // remove：該日取消 WFH（PM 臨時回辦公室）
     "2026-09-04": { "add": ["rd-sherry"], "remove": [] },
-    "2026-09-07": { "add": [], "remove": ["pm-max"] }
+    "2026-09-07": { "add": [], "remove": ["pm-michelle"] }
   }
 }
 ```
 
 - `id` 只要在檔案內唯一即可，慣例是 `pm-` / `rd-` 加小寫名字。
-- `startDate` / `endDate` 可選，用來處理到職／離職；字串比較即可，不必轉日期。目前全體是 `2026-09-01`，所以 8 月的日曆是空的（網頁會自動從 9 月開始顯示，並在側欄說明原因）。
+- `startDate` / `endDate` 可選，用來處理到職／離職；字串比較即可，不必轉日期。目前 `startDate` 全體是 `2026-09-01`，所以 8 月的日曆是空的（網頁會自動從 9 月開始顯示，並在側欄說明原因）。
+- **離職請加 `endDate`，不要從 `members` 刪人**：刪掉的話那個人過去的排班與月度統計會一併消失。加 `endDate` 則是該日之後不再排班，歷史照留，側欄會標「9/4 止」。例：Max 的 `endDate` 是 `2026-09-04`。
 - 排 RD 時記得同一人**同一週只能出現一次**，週一起算。跨月的週要特別注意：`2026-09-30`（三）與 `2026-10-02`（五）屬於同一週。
 
 改完 push 到 `main`，GitHub Actions 會跑測試 + 檢查資料，通過就自動部署。
