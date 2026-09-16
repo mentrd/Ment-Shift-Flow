@@ -98,6 +98,20 @@ export function isActiveOn(member, dateStr) {
   return true;
 }
 
+/**
+ * 成員在 [from, to] 這段期間內是否有任何一天在職。
+ *
+ * 名冊類的畫面（月天數面板、人員篩選、人數統計）用它，而不是逐日的
+ * isActiveOn：整段期間都不在職的人不該出現在該期間的名冊上。
+ * 例如 endDate 2026-09-04 的人，9 月仍要列出（該月有天數），10 月就不該再看到。
+ */
+export function isActiveInRange(member, from, to) {
+  if (!member) return false;
+  if (member.startDate && member.startDate > to) return false;
+  if (member.endDate && member.endDate < from) return false;
+  return true;
+}
+
 /** members 陣列 → { id: member } */
 export function indexById(members = []) {
   return Object.fromEntries(members.map((m) => [m.id, m]));

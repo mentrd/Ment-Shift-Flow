@@ -38,6 +38,7 @@ import {
   findConflicts,
   monthlyCounts,
   shortLabel,
+  isActiveInRange,
 } from './rules.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -333,5 +334,38 @@ describe('月度統計', () => {
     assert.equal(counts['pm-michelle'], 3, '10/05、10/12、10/19（10/26 補假不計）');
     // 10 月的週五：2、9(補假)、16、23、30 → 9 日補假不計 → 4 天
     assert.equal(counts['pm-louisa'], 4, '10/02、10/16、10/23、10/30（10/09 補假不計）');
+  });
+});
+
+describe('名冊：期間在職判定', () => {
+  const max = data.members.find((m) => m.name === 'Max');
+
+  test('Max 的 endDate 是 2026-09-04', () => {
+    assert.equal(max.endDate, '2026-09-04');
+  });
+
+  test('9 月仍在名冊上（該月有在職日）', () => {
+    assert.ok(isActiveInRange(max, '2026-09-01', '2026-09-30'));
+  });
+
+  test('10 月起不該再出現在名冊上', () => {
+    assert.ok(!isActiveInRange(max, '2026-10-01', '2026-10-31'));
+    assert.ok(!isActiveInRange(max, '2026-11-01', '2026-11-30'));
+  });
+
+  test('週檢視也一樣：離職那週還在，下一週就不在', () => {
+    assert.ok(isActiveInRange(max, '2026-08-31', '2026-09-06'), 'W 08/31 含 09/04');
+    assert.ok(!isActiveInRange(max, '2026-09-07', '2026-09-13'), 'W 09/07 已離職');
+  });
+
+  test('未到職者同理：8 月不在名冊，9 月才在', () => {
+    const eudora = data.members.find((m) => m.name === 'EUDORA');
+    assert.equal(eudora.startDate, '2026-09-01');
+    assert.ok(!isActiveInRange(eudora, '2026-08-01', '2026-08-31'));
+    assert.ok(isActiveInRange(eudora, '2026-09-01', '2026-09-30'));
+  });
+
+  test('沒有 startDate / endDate 的人一律在職', () => {
+    assert.ok(isActiveInRange({ id: 'x' }, '2020-01-01', '2020-01-31'));
   });
 });
