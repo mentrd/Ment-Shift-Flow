@@ -132,8 +132,8 @@ describe('初始資料的每日名單', () => {
     '2026-09-07': ['Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-11': ['Louisa', 'Kate', 'Johnny', 'SHERRY', 'LEON', 'ALAN', 'EUDORA'],
     '2026-09-14': ['Michelle', 'Chloe', 'SHERRY', 'LEON', 'RURU', 'DOWNEY'],
-    '2026-09-18': ['Louisa', 'Kate', 'Johnny', 'ALAN', 'EUDORA', 'TEMA', 'ERIC'],
-    '2026-09-21': ['Michelle', 'Chloe', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
+    '2026-09-18': ['Louisa', 'Kate', 'Johnny', 'ALAN', 'TEMA', 'ERIC'],
+    '2026-09-21': ['Michelle', 'Chloe', 'EUDORA', 'RURU', 'TEMA', 'DOWNEY', 'ERIC'],
     '2026-09-25': [], // 中秋
     '2026-09-28': [], // 教師節
   };
@@ -159,11 +159,11 @@ describe('一人一週一天：初始資料零衝突', () => {
 
   test('8 位 RD 每週最多一天（計畫的核對表）', () => {
     const table = {
-      // 09/18 補班後，09/14 那一週 8 位 RD 各有一天，整欄都是 1
+      // EUDORA 由 09/18 調到 09/21 後，W 09/14 只剩 7 位 RD，EUDORA 那格是 0
       SHERRY: { '2026-08-31': 1, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 0 },
       LEON:   { '2026-08-31': 1, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 0 },
       ALAN:   { '2026-08-31': 1, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 0 },
-      EUDORA: { '2026-08-31': 1, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 0 },
+      EUDORA: { '2026-08-31': 1, '2026-09-07': 1, '2026-09-14': 0, '2026-09-21': 1 },
       RURU:   { '2026-08-31': 0, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 1 },
       TEMA:   { '2026-08-31': 0, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 1 },
       DOWNEY: { '2026-08-31': 0, '2026-09-07': 1, '2026-09-14': 1, '2026-09-21': 1 },
@@ -311,11 +311,11 @@ describe('月度統計', () => {
     assert.equal(byName.Louisa, 3);
     assert.equal(byName.Kate, 3);
     assert.equal(byName.Johnny, 3);
-    // RD —— 09/18 補上 SHERRY、RURU、TEMA、ERIC 之後，8 位都是 3 天
+    // RD —— 跨週調動只換週次不換月，8 位仍都是 3 天
     assert.equal(byName.SHERRY, 3, '09/04、09/11、09/14');
     assert.equal(byName.LEON, 3, '09/04、09/11、09/14');
     assert.equal(byName.ALAN, 3, '09/04、09/11、09/18');
-    assert.equal(byName.EUDORA, 3, '09/04、09/11、09/18');
+    assert.equal(byName.EUDORA, 3, '09/04、09/11、09/21');
     assert.equal(byName.RURU, 3, '09/07、09/14、09/21');
     assert.equal(byName.TEMA, 3, '09/07、09/18、09/21');
     assert.equal(byName.DOWNEY, 3, '09/07、09/14、09/21');
