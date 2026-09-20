@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "npx --yes serve .",
-    "test": "node --test scripts/test-rules.js",
+    "test": "node --test scripts/test-rules.js scripts/test-vault.js",
     "validate": "node scripts/validate-data.js",
     "check": "npm test && npm run validate",
-    "holidays": "node scripts/fetch-holidays.js"
+    "holidays": "node scripts/fetch-holidays.js",
+    "vault": "node scripts/make-vault.js"
   }
 }

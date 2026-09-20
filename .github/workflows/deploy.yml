@@ -27,11 +27,12 @@ jobs:
         with:
           node-version: '22'
 
-      # 規則邏輯的回歸測試（前端與 validate 共用 scripts/rules.js）
-      - name: 測試排班規則
-        run: node --test scripts/test-rules.js
+      # 規則與加解密的回歸測試：讀 scripts/fixtures 的凍結快照，與線上資料無關，
+      # 網頁儲存班表不會讓它紅
+      - name: 測試排班規則與 vault
+        run: node --test scripts/test-rules.js scripts/test-vault.js
 
-      # schedule.json 是人工貼回 repo 的，貼壞或排出衝突都擋在這裡
+      # schedule.json 可能由網頁 commit 或手改，結構錯或排出衝突都擋在這裡
       - name: 檢查資料
         run: node scripts/validate-data.js
 

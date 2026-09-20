@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-16",
+  "members": [
+    { "id": "pm-max",      "name": "Max",      "group": "PM", "day": 1, "startDate": "2026-09-01", "endDate": "2026-09-04" },
+    { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
+    { "id": "pm-chloe",    "name": "Chloe",    "group": "PM", "day": 1, "startDate": "2026-09-01" },
+    { "id": "pm-louisa",   "name": "Louisa",   "group": "PM", "day": 5, "startDate": "2026-09-01" },
+    { "id": "pm-kate",     "name": "Kate",     "group": "PM", "day": 5, "startDate": "2026-09-01" },
+    { "id": "pm-johnny",   "name": "Johnny",   "group": "PM", "day": 5, "startDate": "2026-09-01" },
+
+    { "id": "rd-sherry",   "name": "SHERRY",   "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-leon",     "name": "LEON",     "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-alan",     "name": "ALAN",     "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-eudora",   "name": "EUDORA",   "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-ruru",     "name": "RURU",     "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-tema",     "name": "TEMA",     "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-downey",   "name": "DOWNEY",   "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-eric",     "name": "ERIC",     "group": "RD", "day": null, "startDate": "2026-09-01" }
+  ],
+  "assignments": {
+    "2026-09-04": { "add": ["rd-sherry", "rd-leon", "rd-alan", "rd-eudora"], "remove": [] },
+    "2026-09-07": { "add": ["rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] },
+    "2026-09-11": { "add": ["rd-sherry", "rd-leon", "rd-alan", "rd-eudora"], "remove": [] },
+    "2026-09-14": { "add": ["rd-ruru", "rd-sherry", "rd-downey", "rd-leon"], "remove": [] },
+    "2026-09-18": { "add": ["rd-alan", "rd-tema", "rd-eric"], "remove": [] },
+    "2026-09-21": { "add": ["rd-eudora", "rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] }
+  }
+}

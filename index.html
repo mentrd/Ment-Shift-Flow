@@ -297,6 +297,75 @@
   .banner .datelink { color: var(--holiday); font-weight: 600; text-decoration: underline;
                       text-underline-offset: 2px; }
 
+  /* ── 編輯模式 ──
+     登入後才會出現這些元素；檢視模式的 DOM 與樣式完全不變。 */
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  .btn.primary:hover { color: var(--accent-fg); opacity: .88; }
+  .btn[disabled] { opacity: .5; cursor: default; pointer-events: none; }
+  .mode { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px;
+          border-radius: 8px; background: var(--accent-soft); color: var(--accent);
+          font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+  /* 格子在編輯模式是 div[role=button]（<button> 裡不能放可拖曳子元素，Firefox 也不會啟動拖曳），補回游標 */
+  .cell[role="button"], .wrow[role="button"] { cursor: pointer; }
+  .editing .who-row[draggable], .editing .pill[draggable] { cursor: grab; }
+  .editing .who-row[draggable]:hover { color: var(--accent); }
+  .who-row.dragging, .pill.dragging { opacity: .35; }
+
+  /* 放得下／放不下：寫在 .sel 之後才蓋得過選取色 */
+  .cell.drop-ok, .wrow.drop-ok { background: var(--rd-bg); box-shadow: inset 0 0 0 2px var(--rd); }
+  .cell.drop-no, .wrow.drop-no { background: var(--holiday-bg); box-shadow: inset 0 0 0 2px var(--holiday); }
+  .cell.drop-ok::after, .cell.drop-no::after {
+    content: attr(data-why); margin-top: auto; font-size: 12px; font-weight: 600; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cell.drop-ok::after { color: var(--rd); }
+  .cell.drop-no::after { color: var(--holiday); }
+  .wrow { position: relative; }
+  .wrow.drop-ok::after, .wrow.drop-no::after {
+    content: attr(data-why); position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+    font-size: 12.5px; font-weight: 600; }
+  .wrow.drop-ok::after { color: var(--rd); }
+  .wrow.drop-no::after { color: var(--holiday); }
+
+  /* 側欄勾選列：沿用 .sname / .sday / .subhead，只新增列本身 */
+  .erow { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 9px;
+          min-height: 28px; width: calc(100% + 12px); margin-left: -6px; padding: 0 6px;
+          border-radius: 7px; cursor: pointer; }
+  .erow:hover { background: var(--surface-2); }
+  .erow input { margin: 0; width: 16px; height: 16px; accent-color: var(--accent); cursor: inherit; }
+  .erow.off { cursor: not-allowed; }
+  .erow.off .sname { color: var(--fg-3); }
+  .erow:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .emsg { margin-bottom: 10px; font-size: 12.5px; color: var(--holiday); }
+
+  /* 未儲存變更（琥珀）／狀態通知（綠、藍）橫幅 */
+  .banner.dirty { border-color: var(--makeup-bd); background: var(--makeup-bg); }
+  .banner.dirty .bicon, .banner.dirty .btitle { color: var(--makeup); }
+  .banner.ok { border-color: var(--rd-bd); background: var(--rd-bg); }
+  .banner.ok .bicon, .banner.ok .btitle { color: var(--rd); }
+  .banner.info { border-color: var(--line-2); background: var(--accent-soft); }
+  .banner.info .bicon, .banner.info .btitle { color: var(--accent); }
+  .banner .bact { display: flex; gap: 6px; flex: none; align-items: center; flex-wrap: wrap; }
+  .banner .bclose { color: var(--fg-3); }
+  .banner .bclose:hover { color: var(--fg); }
+  .banner a { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* 登入框（原生 <dialog>，靜態寫在 HTML，不會被 innerHTML 重繪洗掉輸入） */
+  .dlg { border: 1px solid var(--line); border-radius: 14px; padding: 22px;
+         width: min(360px, calc(100vw - 32px)); background: var(--surface); color: var(--fg);
+         box-shadow: var(--pop-shadow); }
+  .dlg::backdrop { background: rgba(16, 24, 40, .45); }
+  .dlg-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+  .fld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px;
+         font-size: 12.5px; color: var(--fg-2); }
+  .fld input { height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-2);
+               background: var(--bg); color: var(--fg); font: inherit; font-size: 14px; }
+  .fld input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  .dlg-err { margin: -4px 0 10px; font-size: 12.5px; color: var(--holiday); }
+  .dlg-err[hidden] { display: none; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  .dlg-hint { margin-top: 12px; font-size: 12px; color: var(--fg-3); line-height: 1.6; text-wrap: pretty; }
+
   /* ── 響應式 ──
      900 以下側欄落到日曆下方；640 以下月曆只留日期與人數，名字交給當日面板。 */
   @media (max-width: 900px) {
@@ -332,11 +401,31 @@
   <h1>WFH 行事曆</h1>
   <span class="hdr-sub" id="topsub"></span>
   <div class="hdr-r">
+    <div id="authBox"></div>
     <div id="themeToggle"></div>
   </div>
 </header>
 
 <div class="banner-wrap" id="banners"></div>
+
+<!-- 登入框：原生 dialog 自帶焦點陷阱與 Escape；<form> 讓 Enter 送出。不用 method="dialog"，失敗時才不會自動關 -->
+<dialog id="loginDlg" class="dlg">
+  <form id="loginForm" novalidate>
+    <h2 class="dlg-title">登入編輯模式</h2>
+    <label class="fld">帳號
+      <input name="user" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+    </label>
+    <label class="fld">密碼
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <p class="dlg-err" id="loginErr" hidden></p>
+    <div class="dlg-foot">
+      <button type="button" class="btn" data-act="login-cancel">取消</button>
+      <button type="submit" class="btn primary" id="loginSubmit">登入</button>
+    </div>
+    <p class="dlg-hint">登入後可直接排班並儲存到 GitHub。密碼只用來解開寫入權限，不會傳到任何地方。</p>
+  </form>
+</dialog>
 
 <div class="page" id="page">
   <main>
@@ -356,8 +445,11 @@ import {
   addDays, dowOf, fmt, shortLabel,
   weekKeyOf, weekDays, isWorkdayOn,
   wfhOn, findConflicts, monthDays, monthlyCounts,
-  isActiveInRange,
+  isActiveInRange, indexById, canAssign,
+  applyToggle, canMove, applyMove, diffAssignments, formatSchedule,
 } from './scripts/rules.js';
+import { openVault, assertVaultShape, VaultError } from './scripts/vault.js';
+import { getFile, putFile, GitHubError } from './scripts/github.js';
 
 const DOW = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -383,9 +475,17 @@ const ICON = {
                        + '<path d="M12.4 3.6v12.8"/><path d="M6.5 8.3 8.3 10l-1.8 1.7"/>', s),
   panelOpen:  (s) => svg('<rect x="2.6" y="3.6" width="14.8" height="12.8" rx="2.6"/>'
                        + '<path d="M12.4 3.6v12.8"/><path d="M8.3 8.3 6.5 10l1.8 1.7"/>', s),
+  lock:   (s) => svg('<rect x="4.2" y="8.8" width="11.6" height="8.4" rx="2"/>'
+                   + '<path d="M6.8 8.8V6.6a3.2 3.2 0 0 1 6.4 0v2.2"/>', s),
+  unlock: (s) => svg('<rect x="4.2" y="8.8" width="11.6" height="8.4" rx="2"/>'
+                   + '<path d="M6.8 8.8V6.6a3.2 3.2 0 0 1 6.2-.9"/>', s),
+  check:  (s) => svg('<path d="M4 10.4 8.2 14.5 16 6.2"/>', s),
+  info:   (s) => svg('<circle cx="10" cy="10" r="7.2"/><path d="M10 9v4.6"/><path d="M10 6.4h.01"/>', s),
+  close:  (s) => svg('<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>', s),
 };
 
-// 這是純檢視工具：排班與成員都在 data/schedule.json 裡改，網頁不寫入任何資料。
+// 未登入＝純檢視。登入後只能改 assignments（排班），成員仍在 data/schedule.json 手改；
+// 異動邏輯在 scripts/rules.js，這裡只有 UI 膠水。
 const state = {
   view: 'month',
   cursor: todayStr(),        // 檢視中的月份／週（用該期間內任一天表示）
@@ -394,7 +494,22 @@ const state = {
   ui: { sidebar: true, memberPop: false },
   data: null,
   holidays: null,
+
+  /* ── 編輯模式 ── */
+  vault: null,               // data/vault.json 內容，第一次點登入才 fetch
+  // token 只存在這個物件裡：不進 localStorage、不進 DOM、不進 URL。重新整理就要重新登入。
+  auth: { token: null, user: null, busy: false, error: null, target: null, expiresAt: null },
+  baseSha: null,             // 登入時從 API 取得的 blob sha，儲存前比對（樂觀鎖）
+  baseline: null,            // 載入／登入／儲存成功時的 data 快照，diff 用
+  changes: [],               // diffAssignments(baseline, data)
+  dirty: false,
+  saving: false,
+  notice: null,              // { kind: 'ok'|'err'|'info', html, actions?: [{ act, label }] } → #banners
+  editMsg: null,             // 編輯面板頂端一行原因（drop 被擋的最後防線）
+  drag: null,                // { id, from, verdicts: Map<date, result>, over: Element|null }
 };
+
+const editing = () => Boolean(state.auth.token);
 
 /* ── 使用者偏好（只有這兩項寫進 localStorage）───────── */
 
@@ -427,6 +542,14 @@ function renderThemeToggle() {
   $('#themeToggle').innerHTML =
     `<button class="ibtn" data-act="theme" data-mode="${dark ? 'light' : 'dark'}"
        title="${label}" aria-label="${label}">${dark ? ICON.sun(17) : ICON.moon(17)}</button>`;
+}
+
+/** header 右側：未登入一顆「登入」；登入後顯示編輯模式與登出。儲存鈕在「未儲存變更」橫幅裡 */
+function renderAuth() {
+  $('#authBox').innerHTML = editing()
+    ? `<span class="mode" title="已解開 GitHub 寫入權限，重新整理即登出">${ICON.unlock(15)} 編輯模式 · ${esc(state.auth.user)}</span>
+       <button class="btn" data-act="logout">登出</button>`
+    : `<button class="btn" data-act="login" title="登入後可以直接排班">${ICON.lock(15)} 登入</button>`;
 }
 
 /* ── 資料存取 ─────────────────────────────────────────── */
@@ -522,8 +645,23 @@ function cellClasses(date, inMonth) {
   return cls;
 }
 
-const nameRow = (m) =>
-  `<span class="who-row"><i class="dot dot-${m.group}"></i><span>${esc(m.name)}</span></span>`;
+/** 月曆格子裡的一個名字；編輯模式可拖曳（data-from 是來源日） */
+const nameRow = (m, date) =>
+  `<span class="who-row"${editing() ? ` draggable="true" data-id="${m.id}" data-from="${date}" title="拖到別天即可改期"` : ''}>`
+  + `<i class="dot dot-${m.group}"></i><span>${esc(m.name)}</span></span>`;
+
+/*
+ * 格子的開頭／結尾標籤。檢視模式維持 <button>（DOM 一個位元都不變）；
+ * 編輯模式改 <div role="button">：<button> 裡不能放可互動子元素，Firefox 也不會從
+ * button 的子元素啟動拖曳。out（前後月）格子在編輯模式沒有 data-act，等同 disabled。
+ */
+function cellOpen(cls, date, disabled) {
+  if (!editing()) return `<button class="${cls}" data-act="pick" data-date="${date}" ${disabled ? 'disabled' : ''}>`;
+  return disabled
+    ? `<div class="${cls}" aria-disabled="true" data-date="${date}">`
+    : `<div class="${cls}" role="button" tabindex="0" data-act="pick" data-date="${date}">`;
+}
+const cellClose = () => (editing() ? '</div>' : '</button>');
 
 function renderMonth() {
   const [y, m] = state.cursor.split('-').map(Number);
@@ -545,8 +683,7 @@ function renderMonth() {
     // 五人以內維持單欄；超過就折成兩欄，先填滿左欄，PM 才不會被拆開
     const rows = shown.length <= 5 ? shown.length : Math.ceil(shown.length / 2);
 
-    return `<button class="cell ${cellClasses(date, inMonth).join(' ')}"
-              data-act="pick" data-date="${date}" ${inMonth ? '' : 'disabled'}>
+    return `${cellOpen(`cell ${cellClasses(date, inMonth).join(' ')}`, date, !inMonth)}
       <span class="cell-top">
         <span class="daynum">${Number(date.slice(8))}</span>
         ${people.length ? `<span class="cnt">${people.length}</span>` : ''}
@@ -557,10 +694,10 @@ function renderMonth() {
         : ''}
       ${shown.length
         ? `<span class="who" style="grid-template-rows:repeat(${rows},auto)">
-             ${shown.map(nameRow).join('')}</span>`
+             ${shown.map((p) => nameRow(p, date)).join('')}</span>`
         : ''}
       ${rest > 0 ? `<span class="more">還有 ${rest} 人</span>` : ''}
-    </button>`;
+    ${cellClose()}`;
   }).join('');
 
   return `<div class="cal">
@@ -588,8 +725,10 @@ function renderWeek() {
     else summary = `<span class="wsum"><i class="dot dot-PM"></i><b>${pm}</b>`
                  + `<i class="dot dot-RD"></i><b>${rd}</b></span>`;
 
-    return `<button class="wrow ${cellClasses(date, true).join(' ')}"
-              data-act="pick" data-date="${date}">
+    // 週檢視的膠囊在編輯模式同樣可拖曳：同週調日在這裡最直觀（五列都在眼前）
+    const drag = (p) => (editing() ? ` draggable="true" data-id="${p.id}" data-from="${date}" title="拖到別天即可改期"` : '');
+
+    return `${cellOpen(`wrow ${cellClasses(date, true).join(' ')}`, date, false)}
       <span class="wdate">
         <span class="wnum">${Number(date.slice(5, 7))}/${Number(date.slice(8))}</span>
         <span class="wdow">${DOW[dow]}</span>
@@ -597,9 +736,9 @@ function renderWeek() {
       ${summary}
       ${people.length
         ? `<span class="pills">${people.map((p) =>
-            `<span class="pill ${p.group}">${esc(p.name)}</span>`).join('')}</span>`
+            `<span class="pill ${p.group}"${drag(p)}>${esc(p.name)}</span>`).join('')}</span>`
         : '<span class="wnone">—</span>'}
-    </button>`;
+    ${cellClose()}`;
   }).join('');
 
   return `<div class="wk">${body}</div>`;
@@ -705,6 +844,8 @@ function renderLegend() {
 /* ── 側欄 ─────────────────────────────────────────────── */
 
 function renderDayPanel() {
+  if (editing()) return renderEditPanel();
+
   const date = state.selected;
   const h = state.holidays[date];
   const off = !isWorkdayOn(date, state.holidays);
@@ -741,6 +882,59 @@ function renderDayPanel() {
       <span class="p-meta">${off ? '不排班' : `WFH ${people.length} 人`}</span>
     </div>
     ${inner}
+  </section>`;
+}
+
+/**
+ * 編輯模式的當日面板：列出該期間全部在職成員（不受篩選影響——被篩掉的人若被排進去
+ * 卻看不到，會很困擾），已 WFH 的打勾；排不進去的人 disabled 並標明原因。
+ * 點名字＝切換勾選（整列是 <label>）；「只看某人」留給下方月天數面板與工具列浮層。
+ */
+function renderEditPanel() {
+  const date = state.selected;
+  const h = state.holidays[date];
+  const off = !isWorkdayOn(date, state.holidays);
+  const [, m, d] = date.split('-').map(Number);
+  const on = new Set(wfhOn(date, state.data, state.holidays).map((x) => x.id));
+  const entry = state.data.assignments[date] || {};
+  const roster = rosterFor(...viewRange());
+
+  let inner;
+  if (off) {
+    inner = `<div class="empty">${h ? esc(h.name) : '週末'} · 不排班</div>`;
+  } else {
+    inner = ['PM', 'RD'].map((g, i) => {
+      const items = roster.filter((x) => x.group === g);
+      if (!items.length) return '';
+      const rows = items.map((x) => {
+        const checked = on.has(x.id);
+        let tag, off2 = false, title = '';
+        if (checked) {
+          tag = x.day === dowOf(date) && !(entry.add || []).includes(x.id) ? '固定日' : '指派';
+        } else {
+          const r = canAssign(x.id, date, state.data, state.holidays);
+          if (!r.ok) { off2 = true; tag = reasonText(r, x, date); title = tag; }
+          else tag = '';
+        }
+        return `<label class="erow${off2 ? ' off' : ''}" title="${esc(title)}">
+          <input type="checkbox" data-act="toggle" data-id="${x.id}" ${checked ? 'checked' : ''} ${off2 ? 'disabled' : ''}>
+          <span class="sname"><i class="dot dot-${g}"></i><span>${esc(x.name)}</span></span>
+          <span class="sday">${esc(tag)}</span>
+        </label>`;
+      }).join('');
+      const n = items.filter((x) => on.has(x.id)).length;
+      return `<div class="subhead${i === 0 ? ' first' : ''}">${g} · 已排 ${n}/${items.length}</div>${rows}`;
+    }).join('');
+  }
+
+  return `<section class="panel">
+    <div class="p-head">
+      <span class="p-title">${m} 月 ${d} 日（${DOW[dowOf(date)]}）</span>
+      <span class="p-meta">${off ? '不排班' : `WFH ${on.size} 人`}</span>
+    </div>
+    ${state.editMsg ? `<div class="emsg">${esc(state.editMsg)}</div>` : ''}
+    ${inner}
+    <p class="hint">勾選＝排入／取消這天的 WFH，名單不受篩選影響；月曆與週檢視的名字可以直接拖到別天改期。要「只看某人」請點下方「月 WFH 天數」的名字。</p>
   </section>`;
 }
 
@@ -801,11 +995,50 @@ function renderStatsPanel() {
 
 /* ── 提示橫幅 ─────────────────────────────────────────── */
 
+/** 狀態通知：儲存成功（綠）、錯誤（紅）、資訊（藍）。actions 是 data-act 按鈕 */
+function renderNotice() {
+  const n = state.notice;
+  if (!n) return '';
+  const icon = n.kind === 'ok' ? ICON.check(17) : n.kind === 'err' ? ICON.warn(17) : ICON.info(17);
+  const actions = (n.actions || []).map((a) =>
+    `<button class="btn" data-act="${a.act}">${esc(a.label)}</button>`).join('');
+  return `<div class="banner ${n.kind === 'err' ? '' : n.kind}">
+    <span class="bicon">${icon}</span>
+    <div class="bbody">${n.html}</div>
+    <span class="bact">${actions}
+      <button class="ibtn bclose" data-act="notice-close" title="關閉" aria-label="關閉">${ICON.close(15)}</button>
+    </span>
+  </div>`;
+}
+
+/** 未儲存變更（琥珀）：列出 diff、儲存與放棄 */
+function renderDirtyBanner() {
+  if (!editing() || !state.dirty) return '';
+  const byId = indexById(state.data.members);
+  const verb = { 'add/+': '排入', 'add/-': '取消指派', 'remove/+': '取消固定日', 'remove/-': '恢復固定日' };
+  const shown = state.changes.slice(0, 8);
+  const rest = state.changes.length - shown.length;
+  const items = shown.map((c) =>
+    `<li><button class="datelink" data-act="pick" data-date="${c.date}">${shortLabel(c.date)}</button>
+      ${esc(byId[c.id]?.name ?? c.id)} ${verb[`${c.kind}/${c.op}`]}</li>`).join('');
+
+  return `<div class="banner dirty">
+    <span class="bicon">${ICON.warn(17)}</span>
+    <div class="bbody">
+      <span class="btitle">${state.changes.length} 筆變更未儲存</span>
+      —— 其他人還看不到。
+      <ul>${items}${rest > 0 ? `<li>…還有 ${rest} 筆</li>` : ''}</ul>
+    </div>
+    <span class="bact">
+      <button class="btn primary" data-act="save" ${state.saving ? 'disabled' : ''}>${state.saving ? '儲存中…' : '儲存到 GitHub'}</button>
+      <button class="btn" data-act="discard" ${state.saving ? 'disabled' : ''}>放棄</button>
+    </span>
+  </div>`;
+}
+
 function renderBanners() {
   const conflicts = findConflicts(state.data, state.holidays);
-  if (!conflicts.length) return '';
-
-  return `<div class="banner">
+  const conflictBanner = !conflicts.length ? '' : `<div class="banner">
     <span class="bicon">${ICON.warn(17)}</span>
     <div class="bbody">
       <span class="btitle">有 ${conflicts.length} 筆「一人一週一天」衝突</span>
@@ -816,20 +1049,428 @@ function renderBanners() {
         ).join('、')}）</li>`).join('')}</ul>
     </div>
   </div>`;
+
+  return renderNotice() + renderDirtyBanner() + conflictBanner;
 }
 
 /* ── 主渲染 ───────────────────────────────────────────── */
 
 function render() {
+  document.body.classList.toggle('editing', editing());
   $('#topsub').textContent =
-    `${rosterFor(...viewRange()).length} 人 · 資料更新於 ${state.data.updatedAt || '—'}`;
+    `${rosterFor(...viewRange()).length} 人 · 資料更新於 ${state.data.updatedAt || '—'}`
+    + (state.dirty ? ' · 有未儲存的變更' : '');
   $('#page').classList.toggle('solo', !state.ui.sidebar);
   $('#banners').innerHTML = renderBanners();
   $('#toolbar').innerHTML = renderToolbar();
   $('#calendar').innerHTML = state.view === 'month' ? renderMonth() : renderWeek();
   $('#legend').innerHTML = renderLegend();
   $('#sidebar').innerHTML = renderDayPanel() + renderStatsPanel();
+  renderAuth();
 }
+
+/* ── 編輯 ─────────────────────────────────────────────────
+ * 資料異動全部交給 scripts/rules.js（純函式、有測試）；這裡只把結果套回 state。
+ */
+
+function resetBaseline() {
+  state.baseline = structuredClone(state.data);
+  refreshDirty();
+}
+
+function refreshDirty() {
+  state.changes = diffAssignments(state.baseline, state.data);
+  state.dirty = state.changes.length > 0;
+}
+
+/** canAssign／canMove 的結果 → 一句中文，側欄小字與拖曳中的 data-why 共用 */
+function reasonText(r, m, date) {
+  switch (r.reason) {
+    case 'week-taken': return `本週已排 ${r.conflictDates.map((d) => d.slice(5).replace('-', '/')).join('、')}`;
+    case 'holiday': {
+      const h = state.holidays[date];
+      return h ? h.name : '週末';   // 純文字；用到的地方自己 esc()，dataset 則不需要
+    }
+    case 'inactive':
+      return m?.startDate && date < m.startDate
+        ? `${Number(m.startDate.slice(5, 7))}/${Number(m.startDate.slice(8))} 起到職`
+        : '已離職';
+    case 'same-day': return '同一天';
+    default: return '不能排在這天';
+  }
+}
+
+/** rules.js 回來的結果套到 state：成功就換資料、失敗就在側欄留一句原因 */
+function applyResult(r, id, date) {
+  if (!r.ok) {
+    const m = indexById(state.data.members)[id];
+    state.editMsg = `${m?.name ?? id}：${reasonText(r, m, date)}`;
+    render();
+    return;
+  }
+  state.data = r.data;
+  state.editMsg = null;
+  state.notice = state.notice?.kind === 'ok' ? null : state.notice;   // 一動資料就把「已儲存」收掉
+  refreshDirty();
+  render();
+}
+
+/** 放棄未儲存的變更：回到 baseline（登入時已與 main 同步過） */
+function discardChanges() {
+  if (!state.dirty) return;
+  if (!confirm(`放棄 ${state.changes.length} 筆未儲存的變更？`)) return;
+  state.data = structuredClone(state.baseline);
+  state.editMsg = null;
+  refreshDirty();
+  render();
+}
+
+/* ── 拖拉 ──
+ * 拖曳進行中絕對不能 render()：innerHTML 重繪會把來源節點移出文件，Chrome 直接終止
+ * 這次拖曳，Firefox 的 dragend 也不再冒泡到 document，清理程式永遠不會跑。
+ * 所以 dragstart～dragleave 只改 class／dataset，drop 自己清理完才重繪。
+ */
+
+const dropTarget = (ev) => ev.target.closest?.('.cell[data-date], .wrow[data-date]');
+
+function clearDragUi() {
+  for (const el of document.querySelectorAll('.dragging, .drop-ok, .drop-no')) {
+    el.classList.remove('dragging', 'drop-ok', 'drop-no');
+    delete el.dataset.why;
+  }
+}
+
+/** 第一次碰到某格才算 canMove，之後查表（dragover 每 50ms 一次） */
+function verdictFor(date) {
+  const d = state.drag;
+  if (!d.verdicts.has(date)) d.verdicts.set(date, canMove(d.id, d.from, date, state.data, state.holidays));
+  return d.verdicts.get(date);
+}
+
+document.addEventListener('dragstart', (ev) => {
+  if (!editing()) return;
+  const src = ev.target.closest?.('[draggable="true"][data-id][data-from]');
+  if (!src) return;
+  state.drag = { id: src.dataset.id, from: src.dataset.from, verdicts: new Map(), over: null };
+  src.classList.add('dragging');
+  ev.dataTransfer.effectAllowed = 'move';
+  ev.dataTransfer.setData('text/plain', src.dataset.id);   // Firefox 不 setData 不會啟動拖曳
+});
+
+function onDragOver(ev) {
+  if (!editing() || !state.drag) return;
+  const cell = dropTarget(ev);
+  if (!cell || cell.classList.contains('out')) return;
+  const date = cell.dataset.date;
+  if (date === state.drag.from) return;   // 拖回同一天：不標色、不 preventDefault → 原生禁止游標
+
+  if (state.drag.over && state.drag.over !== cell) {
+    state.drag.over.classList.remove('drop-ok', 'drop-no');
+    delete state.drag.over.dataset.why;
+  }
+  state.drag.over = cell;
+
+  const r = verdictFor(date);
+  const m = indexById(state.data.members)[state.drag.id];
+  cell.classList.toggle('drop-ok', r.ok);
+  cell.classList.toggle('drop-no', !r.ok);
+  cell.dataset.why = r.ok ? `移到 ${date.slice(5).replace('-', '/')}` : reasonText(r, m, date);
+  if (r.ok) {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'move';
+  }
+}
+document.addEventListener('dragenter', onDragOver);
+document.addEventListener('dragover', onDragOver);
+
+document.addEventListener('dragleave', (ev) => {
+  if (!editing() || !state.drag) return;
+  const cell = dropTarget(ev);
+  // 進入子元素也會觸發 dragleave；只有真的離開格子才清
+  if (cell && !cell.contains(ev.relatedTarget)) {
+    cell.classList.remove('drop-ok', 'drop-no');
+    delete cell.dataset.why;
+    if (state.drag.over === cell) state.drag.over = null;
+  }
+});
+
+document.addEventListener('drop', (ev) => {
+  if (!editing() || !state.drag) return;
+  const cell = dropTarget(ev);
+  if (!cell || cell.classList.contains('out')) return;
+  ev.preventDefault();
+  const { id, from } = state.drag;
+  const to = cell.dataset.date;
+  const r = verdictFor(to);
+  clearDragUi();
+  state.drag = null;
+  if (!r.ok || to === from) return;
+  state.selected = to;
+  applyResult(applyMove(state.data, id, from, to, state.holidays), id, to);   // 這裡才 render()
+});
+
+document.addEventListener('dragend', () => {
+  clearDragUi();          // 冪等：drop 已清過也無妨
+  state.drag = null;
+});
+
+/* 側欄勾選：用 change 而非 click（點 <label> 會產生兩次 click，change 只一次） */
+document.addEventListener('change', (ev) => {
+  const el = ev.target.closest?.('[data-act="toggle"]');
+  if (!el || !editing()) return;
+  applyResult(applyToggle(state.data, el.dataset.id, state.selected, state.holidays), el.dataset.id, state.selected);
+});
+
+/* ── 登入／登出／儲存 ─────────────────────────────────────
+ * 密碼是金鑰不是門禁：vault.json 裡是用帳密加密的 GitHub token，解不開就寫不進去。
+ * 解出的 token 只在 state.auth.token；重新整理即消失。
+ */
+
+const loginDlg = $('#loginDlg');
+const loginForm = $('#loginForm');
+
+function renderLogin() {
+  const busy = state.auth.busy;
+  for (const el of loginForm.querySelectorAll('input, button')) el.disabled = busy;
+  $('#loginSubmit').textContent = busy ? '驗證中…' : '登入';
+  loginForm.setAttribute('aria-busy', String(busy));
+  const err = $('#loginErr');
+  err.hidden = !state.auth.error;
+  err.textContent = state.auth.error || '';
+}
+
+function openLogin() {
+  state.auth.error = null;
+  renderLogin();
+  loginDlg.showModal();
+  loginForm.elements.user.focus();
+  // 先把 vault 抓下來，縮短第一次登入的等待；失敗留給 login() 報
+  if (!state.vault) loadJson('data/vault.json').then((v) => { state.vault = v; }).catch(() => {});
+}
+
+function closeLogin() {
+  if (state.auth.busy) return;
+  loginDlg.close();
+  loginForm.reset();
+}
+
+/** 遠端與本頁載入的資料是否等值（忽略 updatedAt、key 順序、空 entry） */
+const sameSchedule = (a, b) => formatSchedule(a, '') === formatSchedule(b, '');
+
+async function login(user, password) {
+  state.auth.busy = true;
+  state.auth.error = null;
+  renderLogin();
+
+  const failWith = (msg) => {
+    state.auth.busy = false;
+    state.auth.error = msg;
+    renderLogin();
+    loginForm.elements.password.value = '';
+    loginForm.elements.password.focus();
+  };
+
+  try {
+    if (!globalThis.crypto?.subtle) return failWith('此頁面需要 HTTPS 或 localhost 才能登入');
+
+    if (!state.vault) {
+      try { state.vault = await loadJson('data/vault.json'); }
+      catch { return failWith('尚未設定 vault：請先執行 npm run vault 並 commit data/vault.json（見 README）'); }
+    }
+    try { assertVaultShape(state.vault); }
+    catch (e) { return failWith(e instanceof VaultError ? e.message : 'vault.json 格式不正確'); }
+
+    let token;
+    try { token = await openVault(state.vault, user, password); }
+    catch (e) {
+      if (e instanceof VaultError && e.code === 'bad-credentials') return failWith('帳號或密碼錯誤');
+      return failWith(e.message);
+    }
+
+    // 帳密已對 —— 這之後的錯誤可以說清楚，因為不再有洩漏帳密正確性的疑慮
+    const target = state.vault.target;
+    let remote;
+    try { remote = await getFile(target, token); }
+    catch (e) {
+      if (e instanceof GitHubError) {
+        if (e.kind === 'unauthorized') return failWith('帳密正確，但 token 已失效或被撤銷，請重新執行 npm run vault');
+        if (e.kind === 'forbidden' || e.kind === 'not-found') {
+          return failWith(`token 沒有 ${target.owner}/${target.repo} 的存取權（可能 org 尚未核准這個 PAT）`);
+        }
+        if (e.kind === 'network') return failWith('無法連線 GitHub API，請確認網路');
+      }
+      return failWith(e.message);
+    }
+
+    // Pages 可能比 main 舊（部署中、CDN 快取）：以 API 取回的 main 版本為準
+    let remoteData;
+    try { remoteData = JSON.parse(remote.text); }
+    catch { return failWith('main 上的 schedule.json 不是合法 JSON，請先手動修好'); }
+    remoteData.members ||= [];
+    remoteData.assignments ||= {};
+    state.notice = null;
+    if (!sameSchedule(remoteData, state.data)) {
+      state.data = remoteData;
+      state.notice = { kind: 'info', html: `已載入 ${esc(target.branch)} 上最新的資料（線上頁面的版本較舊，部署可能還在進行中）。` };
+    }
+    state.baseSha = remote.sha;
+    resetBaseline();
+    state.auth = { token, user: user.trim(), busy: false, error: null, target, expiresAt: state.vault.expiresAt || null };
+
+    if (state.auth.expiresAt) {
+      const days = Math.round((new Date(state.auth.expiresAt) - new Date()) / 86400000);
+      if (days <= 14) {
+        state.notice = { kind: days < 0 ? 'err' : 'info',
+          html: days < 0
+            ? `token 已於 ${esc(state.auth.expiresAt)} 到期，儲存會失敗。請到 GitHub 重新產生 PAT 後執行 npm run vault。`
+            : `token 將於 ${esc(state.auth.expiresAt)} 到期（剩 ${days} 天），請提前到 GitHub 重新產生 PAT 並執行 npm run vault。` };
+      }
+    }
+
+    renderLogin();
+    loginDlg.close();
+    loginForm.reset();
+    render();
+  } catch (e) {
+    failWith(e?.message || String(e));
+  }
+}
+
+function logout() {
+  if (state.dirty && !confirm('有未儲存的變更，登出後會遺失。確定登出？')) return;
+  if (state.dirty) state.data = structuredClone(state.baseline);
+  state.auth = { token: null, user: null, busy: false, error: null, target: null, expiresAt: null };
+  state.baseSha = null;
+  state.notice = null;
+  state.editMsg = null;
+  state.drag = null;
+  resetBaseline();
+  render();
+}
+
+/** 以遠端版本覆蓋本機（儲存撞到別人的 commit 時用） */
+async function reloadRemote() {
+  if (state.dirty && !confirm('這會放棄你本機的所有未儲存變更，載入 main 上的最新版本。確定？')) return;
+  try {
+    const remote = await getFile(state.auth.target, state.auth.token);
+    const d = JSON.parse(remote.text);
+    d.members ||= [];
+    d.assignments ||= {};
+    state.data = d;
+    state.baseSha = remote.sha;
+    resetBaseline();
+    state.notice = { kind: 'info', html: `已載入 ${esc(state.auth.target.branch)} 上最新的資料。` };
+  } catch (e) {
+    state.notice = { kind: 'err', html: `重新載入失敗：${esc(e.message)}` };
+  }
+  render();
+}
+
+/** 兩個日期字串之間的 commit 內文：每日一行「09/21：+SHERRY −EUDORA」 */
+function summarizeChanges(changes, byId) {
+  const byDate = new Map();
+  for (const c of changes) {
+    const name = byId[c.id]?.name ?? c.id;
+    // add/+ 與 remove/- 都是「多了一個人」；add/- 與 remove/+ 都是「少了一個人」
+    const sign = (c.kind === 'add') === (c.op === '+') ? '+' : '−';
+    if (!byDate.has(c.date)) byDate.set(c.date, []);
+    byDate.get(c.date).push(`${sign}${name}`);
+  }
+  const lines = [...byDate].map(([d, xs]) => `${d.slice(5).replace('-', '/')}：${xs.join(' ')}`);
+  return lines.length > 20 ? [...lines.slice(0, 20), `…等 ${lines.length} 日`] : lines;
+}
+
+async function save() {
+  if (!editing() || !state.dirty || state.saving) return;
+
+  const conflicts = findConflicts(state.data, state.holidays);
+  if (conflicts.length) {
+    state.notice = { kind: 'err', html: `有 ${conflicts.length} 筆「一人一週一天」衝突，CI 會擋下部署。請先解決（見下方紅色橫幅）再儲存。` };
+    render();
+    return;
+  }
+
+  state.saving = true;
+  state.notice = null;
+  render();
+
+  const { target, token } = state.auth;
+  try {
+    // 樂觀鎖：有人在你編輯期間改過 main，就拒絕覆寫
+    const remote = await getFile(target, token);
+    if (remote.sha !== state.baseSha) {
+      state.notice = { kind: 'err',
+        html: '別處已更新過 schedule.json（有人在你編輯期間改了它）。為避免覆寫，這次沒有儲存。',
+        actions: [{ act: 'reload-remote', label: '載入遠端版本（放棄本機變更）' }] };
+      return;
+    }
+
+    const today = todayStr();
+    const next = { ...state.data, updatedAt: today };
+    const text = formatSchedule(next, today);
+    const now = new Date();
+    const title = `data: 網頁排班 ${today} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const body = summarizeChanges(state.changes, indexById(next.members)).join('\n');
+
+    const res = await putFile(target, token, { text, sha: remote.sha, message: `${title}\n\n${body}` });
+
+    state.data = next;
+    state.baseSha = res.contentSha;
+    resetBaseline();
+    const short = (res.commitSha || '').slice(0, 7);
+    const actionsUrl = `https://github.com/${target.owner}/${target.repo}/actions`;
+    state.notice = { kind: 'ok',
+      html: `已儲存${short ? `（commit <code>${esc(short)}</code>）` : ''}。GitHub Actions 部署中，約 1 分鐘後全團隊看到。`
+          + ` <a href="${actionsUrl}" target="_blank" rel="noopener">查看部署狀態</a>` };
+  } catch (e) {
+    if (e instanceof GitHubError) {
+      switch (e.kind) {
+        case 'unauthorized':
+          state.notice = { kind: 'err', html: 'token 已失效、過期或被撤銷，已登出。請到 GitHub 重新產生 PAT 後執行 npm run vault。本機變更已放棄。' };
+          state.auth = { token: null, user: null, busy: false, error: null, target: null, expiresAt: null };
+          state.data = structuredClone(state.baseline);
+          refreshDirty();
+          break;
+        case 'sha-conflict':
+          state.notice = { kind: 'err', html: '遠端已變更，這次沒有儲存。',
+            actions: [{ act: 'reload-remote', label: '載入遠端版本（放棄本機變更）' }] };
+          break;
+        case 'blocked-by-rules':
+          state.notice = { kind: 'err', html: `被 ${esc(target.branch)} 的保護規則擋下：請確認這個 PAT 的帳號在 ruleset 的 bypass 名單（repo admin）。API 訊息：${esc(e.detail)}` };
+          break;
+        case 'forbidden':
+          state.notice = { kind: 'err', html: `PAT 權限不足（需要 Contents: Read and write）或 org 未核准。API 訊息：${esc(e.detail)}` };
+          break;
+        case 'network':
+          state.notice = { kind: 'err', html: '無法連線 GitHub，請確認網路後重試。本機變更仍保留。' };
+          break;
+        default:
+          state.notice = { kind: 'err', html: `儲存失敗（HTTP ${e.status}）：${esc(e.detail)}。本機變更仍保留。` };
+      }
+    } else {
+      state.notice = { kind: 'err', html: `儲存失敗：${esc(e?.message || String(e))}。本機變更仍保留。` };
+    }
+  } finally {
+    state.saving = false;
+    render();
+  }
+}
+
+loginForm.addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  if (state.auth.busy) return;
+  const fd = new FormData(loginForm);
+  login(String(fd.get('user') ?? ''), String(fd.get('password') ?? ''));
+});
+
+// 驗證中禁止 Escape 關閉，避免狀態不一致
+loginDlg.addEventListener('cancel', (ev) => { if (state.auth.busy) ev.preventDefault(); });
+
+window.addEventListener('beforeunload', (ev) => {
+  if (!state.dirty) return;
+  ev.preventDefault();
+  ev.returnValue = '';   // 舊版 Chrome 需要
+});
 
 /* ── 事件（委派）─────────────────────────────────────── */
 
@@ -917,6 +1558,18 @@ document.addEventListener('click', (ev) => {
       state.ui.memberPop = true;
       render();
       break;
+
+    /* ── 編輯模式 ── */
+    case 'login': openLogin(); break;
+    case 'login-cancel': closeLogin(); break;
+    case 'logout': logout(); break;
+    case 'save': save(); break;
+    case 'discard': discardChanges(); break;
+    case 'reload-remote': reloadRemote(); break;
+    case 'notice-close':
+      state.notice = null;
+      render();
+      break;
   }
 });
 
@@ -924,6 +1577,12 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && state.ui.memberPop) {
     state.ui.memberPop = false;
     render();
+    return;
+  }
+  // 編輯模式的格子是 div[role=button]，補回 Enter／Space 的鍵盤操作
+  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches?.('[role="button"][data-act]')) {
+    ev.preventDefault();
+    ev.target.click();
   }
 });
 
@@ -943,6 +1602,7 @@ renderThemeToggle();
     // 確保結構完整，後續程式碼就不必到處防禦
     state.data.members ||= [];
     state.data.assignments ||= {};
+    resetBaseline();
 
     state.ui.sidebar = store.get('wfh.sidebar', '1') !== '0';
 
