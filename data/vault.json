@@ -1,0 +1,19 @@
+{
+  "v": 1,
+  "kdf": "PBKDF2",
+  "hash": "SHA-256",
+  "iterations": 600000,
+  "salt": "2TI0dmwfD39x2nic4xcbiQ==",
+  "cipher": "AES-GCM",
+  "iv": "j7ZXZxTdeEl1RFcN",
+  "ciphertext": "32zrZqyEz9r/TEqXLZ3Bdg/cWNmupbvDR/N54FexHPE1NL7FzAC4mZqH3GLvuQLyi6U7N6RAxeJDmcHnF0HZ4jR4ML7x9XcEWUROm/QWS1naFNTrBSdf4O+a81Z4Ams24CnjUfTTzKdNklghJA==",
+  "target": {
+    "owner": "mentrd",
+    "repo": "Ment-Shift-Flow",
+    "branch": "main",
+    "path": "data/schedule.json"
+  },
+  "createdAt": "2026-09-21",
+  "expiresAt": "2027-12-31",
+  "note": "GitHub PAT · Contents Read and write · 只授權此 repo"
+}
