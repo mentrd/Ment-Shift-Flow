@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-16",
+  "updatedAt": "2026-09-21",
   "members": [
     { "id": "pm-max",      "name": "Max",      "group": "PM", "day": 1, "startDate": "2026-09-01", "endDate": "2026-09-04" },
     { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
@@ -24,6 +24,10 @@
     "2026-09-11": { "add": ["rd-sherry", "rd-leon", "rd-alan", "rd-eudora"], "remove": [] },
     "2026-09-14": { "add": ["rd-ruru", "rd-sherry", "rd-downey", "rd-leon"], "remove": [] },
     "2026-09-18": { "add": ["rd-alan", "rd-tema", "rd-eric"], "remove": [] },
-    "2026-09-21": { "add": ["rd-eudora", "rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] }
+    "2026-09-21": { "add": ["rd-eudora", "rd-ruru", "rd-tema", "rd-downey", "rd-eric"], "remove": [] },
+    "2026-10-02": { "add": ["rd-sherry", "rd-downey", "rd-leon", "rd-eudora"], "remove": [] },
+    "2026-10-05": { "add": ["rd-alan", "rd-ruru", "rd-tema", "rd-eric"], "remove": [] },
+    "2026-10-12": { "add": ["rd-sherry", "rd-ruru", "rd-eric", "rd-eudora"], "remove": [] },
+    "2026-10-16": { "add": ["rd-leon", "rd-alan", "rd-tema", "rd-downey"], "remove": [] }
   }
 }
