@@ -31,6 +31,8 @@
     "2026-10-16": { "add": ["rd-leon", "rd-alan", "rd-tema", "rd-downey"], "remove": [] },
     "2026-10-19": { "add": ["rd-eudora", "rd-ruru", "rd-alan", "rd-leon"], "remove": [] },
     "2026-10-23": { "add": ["rd-tema", "rd-sherry", "rd-downey", "rd-eric"], "remove": [] },
-    "2026-11-30": { "add": ["rd-sherry"], "remove": [] }
+    "2026-11-23": { "add": ["rd-eudora", "rd-tema", "rd-eric", "rd-ruru"], "remove": [] },
+    "2026-11-27": { "add": ["rd-sherry", "rd-alan", "rd-leon"], "remove": [] },
+    "2026-11-30": { "add": ["rd-sherry", "rd-ruru", "rd-alan"], "remove": [] }
   }
 }
