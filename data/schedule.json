@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-17",
+  "updatedAt": "2026-10-28",
   "members": [
     { "id": "pm-max",      "name": "Max",      "group": "PM", "day": 1, "startDate": "2026-09-01", "endDate": "2026-09-04" },
     { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
@@ -16,7 +16,8 @@
     { "id": "rd-ruru",     "name": "RURU",     "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-tema",     "name": "TEMA",     "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-downey",   "name": "DOWNEY",   "group": "RD", "day": null, "startDate": "2026-09-01" },
-    { "id": "rd-eric",     "name": "ERIC",     "group": "RD", "day": null, "startDate": "2026-09-01" }
+    { "id": "rd-eric",     "name": "ERIC",     "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-nick",     "name": "NICK",     "group": "RD", "day": null, "startDate": "2026-10-27" }
   ],
   "assignments": {
     "2026-09-04": { "add": ["rd-sherry", "rd-leon", "rd-alan", "rd-eudora"], "remove": [] },
