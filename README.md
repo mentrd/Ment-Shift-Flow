@@ -206,6 +206,7 @@ npm run vault      # 互動產生 data/vault.json（帳密加密的 GitHub token
 index.html                 全部 UI + CSS + JS（登入後可編輯排班並寫回 repo）
 data/schedule.json         成員 + 逐日指派（唯一真實來源；網頁儲存或手動編輯）
 data/holidays.json         國定假日（程式產生，勿手改）
+data/birthdays.json        生日 ["MM-DD", ...]，每年該日顯示 🎂（不記名字與年份；手動編輯）
 data/vault.json            帳密加密後的 GitHub token（npm run vault 產生；只有密文）
 scripts/rules.js           排班規則與異動邏輯的唯一真實來源
 scripts/vault.js           PBKDF2 + AES-GCM 封裝（前端與 make-vault 共用）

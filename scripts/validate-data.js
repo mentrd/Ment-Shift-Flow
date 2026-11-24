@@ -62,7 +62,8 @@ function report() {
 
 const data = loadJson('data/schedule.json');
 const holidays = loadJson('data/holidays.json');
-if (!data || !holidays) report();
+const birthdays = loadJson('data/birthdays.json');
+if (!data || !holidays || !birthdays) report();
 
 /* ── members ──────────────────────────────────────────── */
 
@@ -137,6 +138,21 @@ if (typeof holidays !== 'object' || Array.isArray(holidays)) {
       `holidays.json 最新年份是 ${maxYear || '(無)'}，已早於今年 ${thisYear}，請執行 node scripts/fetch-holidays.js`,
     );
   }
+}
+
+/* ── birthdays（每年同月同日顯示蛋糕，純顯示）──────────── */
+
+if (!Array.isArray(birthdays)) {
+  errors.push('birthdays.json 必須是 "MM-DD" 字串的陣列');
+} else {
+  for (const md of birthdays) {
+    // 2000 是閏年，02-29 才不會被誤判
+    if (!/^\d{2}-\d{2}$/.test(String(md)) || !isValidDate(`2000-${md}`)) {
+      errors.push(`birthdays.json 有不合法的月日：${JSON.stringify(md)}`);
+    }
+  }
+  const dupes = birthdays.filter((md, i) => birthdays.indexOf(md) !== i);
+  if (dupes.length) errors.push(`birthdays.json 有重複的月日：${[...new Set(dupes)].join('、')}`);
 }
 
 /* ── assignments ──────────────────────────────────────── */

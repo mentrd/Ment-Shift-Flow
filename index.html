@@ -188,6 +188,8 @@
              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tagline.hol { color: var(--holiday); }
   .tagline.mkp { color: var(--makeup); }
+  .tagline.cake { color: var(--accent); }
+  .panel > .tagline.cake { display: block; margin-bottom: 8px; }
 
   /* 隱藏六日後每格夠寬，六人以上折成兩欄（列數由 JS 給），不再出現「還有 N 人」 */
   .who { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1px 10px; }
@@ -220,6 +222,7 @@
           font-variant-numeric: tabular-nums; }
   .wrow.hol .wnum { color: var(--holiday); }
   .wdow { font-size: 13px; color: var(--fg-3); }
+  .wmid { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .wsum { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--fg-2);
           font-variant-numeric: tabular-nums; }
   .wsum b { font-weight: 600; }
@@ -494,6 +497,7 @@ const state = {
   ui: { sidebar: true, memberPop: false },
   data: null,
   holidays: null,
+  birthdays: null,          // Set<'MM-DD'>，來自 data/birthdays.json：每年這天顯示蛋糕（刻意不記名字與年份）
 
   /* ── 編輯模式 ── */
   vault: null,               // data/vault.json 內容，第一次點登入才 fetch
@@ -663,6 +667,11 @@ function cellOpen(cls, date, disabled) {
 }
 const cellClose = () => (editing() ? '</div>' : '</button>');
 
+/** 生日（每年同月同日）的蛋糕標籤；不是生日回傳空字串 */
+function cakeTag(date) {
+  return state.birthdays.has(date.slice(5)) ? '<span class="tagline cake" title="生日快樂">🎂</span>' : '';
+}
+
 function renderMonth() {
   const [y, m] = state.cursor.split('-').map(Number);
   const prefix = `${y}-${pad(m)}-`;
@@ -692,6 +701,7 @@ function renderMonth() {
         ? `<span class="tagline ${h.workday ? 'mkp' : 'hol'}"
              title="${esc(h.name)}">${esc(h.workday ? '補班日' : h.name)}</span>`
         : ''}
+      ${inMonth ? cakeTag(date) : ''}
       ${shown.length
         ? `<span class="who" style="grid-template-rows:repeat(${rows},auto)">
              ${shown.map((p) => nameRow(p, date)).join('')}</span>`
@@ -733,7 +743,7 @@ function renderWeek() {
         <span class="wnum">${Number(date.slice(5, 7))}/${Number(date.slice(8))}</span>
         <span class="wdow">${DOW[dow]}</span>
       </span>
-      ${summary}
+      <span class="wmid">${summary}${cakeTag(date)}</span>
       ${people.length
         ? `<span class="pills">${people.map((p) =>
             `<span class="pill ${p.group}"${drag(p)}>${esc(p.name)}</span>`).join('')}</span>`
@@ -881,6 +891,7 @@ function renderDayPanel() {
       <span class="p-title">${m} 月 ${d} 日（${DOW[dowOf(date)]}）</span>
       <span class="p-meta">${off ? '不排班' : `WFH ${people.length} 人`}</span>
     </div>
+    ${cakeTag(date)}
     ${inner}
   </section>`;
 }
@@ -933,6 +944,7 @@ function renderEditPanel() {
       <span class="p-meta">${off ? '不排班' : `WFH ${on.size} 人`}</span>
     </div>
     ${state.editMsg ? `<div class="emsg">${esc(state.editMsg)}</div>` : ''}
+    ${cakeTag(date)}
     ${inner}
     <p class="hint">勾選＝排入／取消這天的 WFH，名單不受篩選影響；月曆與週檢視的名字可以直接拖到別天改期。要「只看某人」請點下方「月 WFH 天數」的名字。</p>
   </section>`;
@@ -1592,12 +1604,14 @@ renderThemeToggle();
 
 (async function init() {
   try {
-    const [schedule, holidays] = await Promise.all([
+    const [schedule, holidays, birthdays] = await Promise.all([
       loadJson('data/schedule.json'),
       loadJson('data/holidays.json'),
+      loadJson('data/birthdays.json'),
     ]);
     state.data = schedule;
     state.holidays = holidays;
+    state.birthdays = new Set(birthdays);
 
     // 確保結構完整，後續程式碼就不必到處防禦
     state.data.members ||= [];
