@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-28",
+  "updatedAt": "2026-11-24",
   "members": [
     { "id": "pm-max",      "name": "Max",      "group": "PM", "day": 1, "startDate": "2026-09-01", "endDate": "2026-09-04" },
     { "id": "pm-michelle", "name": "Michelle", "group": "PM", "day": 1, "startDate": "2026-09-01" },
     { "id": "pm-chloe",    "name": "Chloe",    "group": "PM", "day": 1, "startDate": "2026-09-01" },
     { "id": "pm-louisa",   "name": "Louisa",   "group": "PM", "day": 5, "startDate": "2026-09-01" },
     { "id": "pm-kate",     "name": "Kate",     "group": "PM", "day": 5, "startDate": "2026-09-01" },
-    { "id": "pm-johnny",   "name": "Johnny",   "group": "PM", "day": 5, "startDate": "2026-09-01" },
+    { "id": "pm-johnny",   "name": "Johnny",   "group": "PM", "day": 5, "startDate": "2026-09-01", "endDate": "2026-11-13" },
 
     { "id": "rd-sherry",   "name": "SHERRY",   "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-leon",     "name": "LEON",     "group": "RD", "day": null, "startDate": "2026-09-01" },
@@ -15,7 +15,7 @@
     { "id": "rd-eudora",   "name": "EUDORA",   "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-ruru",     "name": "RURU",     "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-tema",     "name": "TEMA",     "group": "RD", "day": null, "startDate": "2026-09-01" },
-    { "id": "rd-downey",   "name": "DOWNEY",   "group": "RD", "day": null, "startDate": "2026-09-01" },
+    { "id": "rd-downey",   "name": "DOWNEY",   "group": "RD", "day": null, "startDate": "2026-09-01", "endDate": "2026-11-13" },
     { "id": "rd-eric",     "name": "ERIC",     "group": "RD", "day": null, "startDate": "2026-09-01" },
     { "id": "rd-nick",     "name": "NICK",     "group": "RD", "day": null, "startDate": "2026-10-27" }
   ],
@@ -38,9 +38,16 @@
     "2026-11-09": { "add": ["rd-tema", "rd-alan", "rd-leon", "rd-downey"], "remove": [] },
     "2026-11-13": { "add": ["rd-sherry", "rd-eudora", "rd-eric", "rd-nick", "rd-ruru"], "remove": [] },
     "2026-11-16": { "add": ["rd-sherry", "rd-eudora", "rd-leon", "rd-nick"], "remove": [] },
-    "2026-11-20": { "add": ["rd-tema", "rd-alan", "rd-ruru", "rd-eric"], "remove": ["pm-johnny"] },
+    "2026-11-20": { "add": ["rd-tema", "rd-alan", "rd-ruru", "rd-eric"], "remove": [] },
     "2026-11-23": { "add": ["rd-eudora", "rd-tema", "rd-eric", "rd-ruru", "rd-nick"], "remove": [] },
-    "2026-11-27": { "add": ["rd-sherry", "rd-alan", "rd-leon"], "remove": ["pm-johnny"] },
-    "2026-11-30": { "add": ["rd-sherry", "rd-ruru", "rd-alan"], "remove": [] }
+    "2026-11-27": { "add": ["rd-sherry", "rd-alan", "rd-leon"], "remove": [] },
+    "2026-11-30": { "add": ["rd-sherry", "rd-ruru", "rd-alan"], "remove": [] },
+    "2026-12-04": { "add": ["rd-eudora", "rd-tema", "rd-leon", "rd-eric", "rd-nick"], "remove": [] },
+    "2026-12-07": { "add": ["rd-eudora", "rd-tema", "rd-leon", "rd-eric"], "remove": [] },
+    "2026-12-11": { "add": ["rd-sherry", "rd-alan", "rd-ruru", "rd-nick"], "remove": [] },
+    "2026-12-14": { "add": ["rd-sherry", "rd-alan", "rd-ruru", "rd-nick"], "remove": [] },
+    "2026-12-18": { "add": ["rd-eudora", "rd-tema", "rd-leon", "rd-eric"], "remove": [] },
+    "2026-12-21": { "add": ["rd-sherry", "rd-alan", "rd-ruru", "rd-nick"], "remove": [] },
+    "2026-12-28": { "add": ["rd-eudora", "rd-tema", "rd-leon", "rd-eric"], "remove": [] }
   }
 }
