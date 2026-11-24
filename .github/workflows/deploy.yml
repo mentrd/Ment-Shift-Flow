@@ -15,11 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,5 +40,14 @@ jobs:
         with:
           path: '.'
 
+  # 上傳與部署必須分在不同 job：同一 job 內 deploy-pages 緊接著查 artifact，
+  # 常常查不到剛上傳完的檔案而失敗（actions/deploy-pages#451）
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
